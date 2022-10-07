@@ -25,7 +25,7 @@ use Vanilo\Cart\Listeners\RestoreCurrentUsersLastActiveCart;
 class EventServiceProvider extends ServiceProvider
 {
     protected $listen = [
-        Login::class => [
+        /* Login::class => [
             AssignUserToCart::class,
             RestoreCurrentUsersLastActiveCart::class,
         ],
@@ -38,6 +38,6 @@ class EventServiceProvider extends ServiceProvider
         ],
         Lockout::class => [
             DissociateUserFromCart::class
-        ]
+        ] */
     ];
 }
