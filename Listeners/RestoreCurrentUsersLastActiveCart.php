@@ -21,11 +21,11 @@ class RestoreCurrentUsersLastActiveCart
 {
     public function handle($event)
     {
-        if (config('vanilo.cart.preserve_for_user') && Auth::check()) {
+        if (config('vanilo.cart.preserve_for_user') && Auth::guard('web')->check()) {
             if (Cart::isEmpty()) {
-                Cart::restoreLastActiveCart(Auth::user());
+                Cart::restoreLastActiveCart(Auth::guard('web')->user());
             } elseif (config('vanilo.cart.merge_duplicates')) {
-                Cart::mergeLastActiveCartWithSessionCart(Auth::user());
+                Cart::mergeLastActiveCartWithSessionCart(Auth::guard('web')->user());
             }
         }
     }
