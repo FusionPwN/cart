@@ -28,7 +28,7 @@ interface Cart extends CheckoutSubject
      *
      * @return CartItem Returns the item object that has been created (or updated)
      */
-    public function addItem(Buyable $product, $qty = 1, $params = []): CartItem;
+    public function addItem(Buyable $product, $qty = 1, $params = []);
 
     /**
      * Removes an item from the cart
