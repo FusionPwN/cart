@@ -6,6 +6,7 @@ namespace Vanilo\Cart\Models;
 
 use Vanilo\Adjustments\Adjusters\DiscountInterval;
 use Vanilo\Adjustments\Adjusters\DiscountStore;
+use Vanilo\Adjustments\Adjusters\DirectDiscount;
 use Vanilo\Cart\Contracts\CartItem as CartItemContract;
 use Vanilo\Contracts\Buyable;
 use App\Models\Admin\Product;
@@ -297,6 +298,19 @@ class CartItem extends Model implements CartItemContract, Adjustable
 			} else {
 				$this->adjustments()->create(new DiscountStore($cart, $this, $store_discount));
 			}
+		}
+	}
+
+	public function updateDirectDiscountAdjustments(?Cart $cart = null)
+	{
+		$directAdjustment = $this->adjustments()->byType(AdjustmentTypeProxy::DIRECT_DISCOUNT())->first();
+
+		if (isset($directAdjustment)) {
+			$this->removeAdjustment($directAdjustment);
+		}
+
+		if ($this->product->validDirectDiscount()) {
+			$this->adjustments()->create(new DirectDiscount($cart, $this));
 		}
 	}
 }

@@ -375,6 +375,7 @@ class Cart extends Model implements CartContract, Adjustable
 		foreach ($this->items as $item) {
 			$item->removeAllAdjustments();
 			$item->updateIntervalAdjustments($this);
+			$item->updateDirectDiscountAdjustments($this);
 		}
 
 		# desconto produto direto
