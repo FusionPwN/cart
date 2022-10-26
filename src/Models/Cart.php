@@ -237,6 +237,28 @@ class Cart extends Model implements CartContract, Adjustable
 	/**
 	 * @inheritDoc
 	 */
+	public function setItemQty($item, $qty = 1)
+	{
+		if (Cache::get('settings.infinite-stock') == 0 && $qty > $item->product->getStock()) {
+			return (object) [
+				'error' => 'not-enough-stock'
+			];
+		}
+
+		if ($item) {
+			$item->quantity = $qty;
+			$item->save();
+		}
+
+		$this->load('items');
+		$this->refresh();
+
+		return $item;
+	}
+
+	/**
+	 * @inheritDoc
+	 */
 	public function removeItem($item)
 	{
 		if ($item) {

@@ -30,6 +30,14 @@ interface Cart extends CheckoutSubject
      */
     public function addItem(Buyable $product, $qty = 1, $params = []);
 
+	/**
+	 * Removes an item from the cart
+	 *
+	 * @param object|int    $item    Object: item or int = item id
+	 * @param int $qty The quantity to add
+	 */
+	public function setItemQty($item, $qty = 1);
+
     /**
      * Removes an item from the cart
      *
