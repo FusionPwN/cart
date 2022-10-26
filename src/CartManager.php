@@ -97,6 +97,16 @@ class CartManager implements CartManagerContract
 	/**
 	 * @inheritDoc
 	 */
+	public function setItemQty($item, $qty = 1)
+	{
+		$cart = $this->findOrCreateCart();
+
+		return $cart->setItemQty($item, $qty);
+	}
+
+	/**
+	 * @inheritDoc
+	 */
 	public function removeItem($item)
 	{
 		if ($cart = $this->model()) {
