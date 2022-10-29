@@ -256,8 +256,6 @@ class Cart extends Model implements CartContract, Adjustable
 			$item->save();
 		}
 
-		$this->fodasse = true;
-
 		$this->load('items');
 		$this->refresh();
 		$this->cartInit();
