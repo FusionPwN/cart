@@ -29,7 +29,6 @@ use App\Rules\Coupon\IsStartDateValid;
 use App\Rules\Coupon\IsUserAllowed;
 use App\Rules\Coupon\IsValidShippingAdjustment;
 use App\Rules\Coupon\OrderHasMinValue;
-use Closure;
 use Exception;
 use Vanilo\Cart\Models\CartItemProxy;
 use Illuminate\Contracts\Auth\Authenticatable;
@@ -204,7 +203,7 @@ class Cart extends Model implements CartContract, Adjustable
 	/**
 	 * @inheritDoc
 	 */
-	public function addItem(Buyable $product, $qty = 1, $params = [], ?Closure $closure = null)
+	public function addItem(Buyable $product, $qty = 1, $params = [])
 	{
 		if ($product->isSimpleProduct()) {
 			$item = $this->items()->ofCart($this)->byProduct($product)->first();
@@ -231,10 +230,6 @@ class Cart extends Model implements CartContract, Adjustable
 			$this->load('items');
 			$this->refresh();
 
-			if (null !== $closure) {
-				$closure();
-			}
-
 			return $item;
 		}
 	}
@@ -242,7 +237,7 @@ class Cart extends Model implements CartContract, Adjustable
 	/**
 	 * @inheritDoc
 	 */
-	public function setItemQty($item, $qty = 1, ?Closure $closure = null)
+	public function setItemQty($item, $qty = 1)
 	{
 		if (Cache::get('settings.infinite-stock') == 0 && $qty > $item->product->getStock()) {
 			return (object) [
@@ -257,10 +252,6 @@ class Cart extends Model implements CartContract, Adjustable
 
 		$this->load('items');
 		$this->refresh();
-
-		if (null !== $closure) {
-			$closure();
-		}
 
 		return $item;
 	}

@@ -7,7 +7,6 @@ namespace Vanilo\Cart;
 use App\Events\UpdateCartState;
 use App\Models\Admin\Coupon;
 use App\Models\Admin\ShipmentMethod;
-use Closure;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Vanilo\Cart\Contracts\Cart as CartContract;
@@ -88,21 +87,21 @@ class CartManager implements CartManagerContract
 	/**
 	 * @inheritDoc
 	 */
-	public function addItem(Buyable $product, $qty = 1, $params = [], ?Closure $closure = null)
+	public function addItem(Buyable $product, $qty = 1, $params = [])
 	{
 		$cart = $this->findOrCreateCart();
 
-		return $cart->addItem($product, $qty, $params, $closure);
+		return $cart->addItem($product, $qty, $params);
 	}
 
 	/**
 	 * @inheritDoc
 	 */
-	public function setItemQty($item, $qty =1, ?Closure $closure = null)
+	public function setItemQty($item, $qty = 1)
 	{
 		$cart = $this->findOrCreateCart();
 
-		return $cart->setItemQty($item, $qty, $closure);
+		return $cart->setItemQty($item, $qty);
 	}
 
 	/**
