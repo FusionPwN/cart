@@ -43,13 +43,18 @@ class CartItem extends Model implements CartItemContract, Adjustable
 
 		# converter valores decimal em floats, eram carregados como string...
 		static::retrieved(function ($model) {
-			$model->price_vat = (float) $model->price_vat;
-			$model->prices = $model->formattedPrice();
+			$model->cartItemInit();
 		});
 
 		static::deleting(function ($model) {
 			$model->removeAllAdjustments();
 		});
+	}
+
+	public function cartItemInit() 
+	{
+		$this->price_vat = (float) $this->price_vat;
+		$this->prices = $this->formattedPrice();
 	}
 
 	public function total(): float

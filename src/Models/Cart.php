@@ -78,14 +78,19 @@ class Cart extends Model implements CartContract, Adjustable
 		parent::boot();
 
 		static::retrieved(function ($model) {
-			$model->buildCartGlobals();
-			$model->updateAdjustments();
+			$model->cartInit();
 		});
 
 		static::deleting(function ($model) {
 			$model->removeAllAdjustments();
 			$model->clear();
 		});
+	}
+
+	public function cartInit()
+	{
+		$this->buildCartGlobals();
+		$this->updateAdjustments();
 	}
 
 	/**
@@ -229,6 +234,7 @@ class Cart extends Model implements CartContract, Adjustable
 
 			$this->load('items');
 			$this->refresh();
+			$this->cartInit();
 
 			return $item;
 		}
@@ -250,8 +256,11 @@ class Cart extends Model implements CartContract, Adjustable
 			$item->save();
 		}
 
+		$this->fodasse = true;
+
 		$this->load('items');
 		$this->refresh();
+		$this->cartInit();
 
 		return $item;
 	}
@@ -267,6 +276,7 @@ class Cart extends Model implements CartContract, Adjustable
 
 		$this->load('items');
 		$this->refresh();
+		$this->cartInit();
 	}
 
 	/**
@@ -399,8 +409,6 @@ class Cart extends Model implements CartContract, Adjustable
 			$item->updateIntervalAdjustments($this);
 			$item->updateDirectDiscountAdjustments($this);
 		}
-
-		# desconto produto direto
 
 		foreach ($this->applyableDiscounts as $discount) {
 			$discount_data = $discount['discount_data'];
