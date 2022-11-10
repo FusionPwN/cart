@@ -29,6 +29,7 @@ use App\Rules\Coupon\IsStartDateValid;
 use App\Rules\Coupon\IsUserAllowed;
 use App\Rules\Coupon\IsValidShippingAdjustment;
 use App\Rules\Coupon\OrderHasMinValue;
+use App\Rules\Coupon\ProductsAllowFreeShipping;
 use Exception;
 use Vanilo\Cart\Models\CartItemProxy;
 use Illuminate\Contracts\Auth\Authenticatable;
@@ -509,18 +510,22 @@ class Cart extends Model implements CartContract, Adjustable
 		});
 	}
 
-	public function itemsPreventFreeShipping(): bool
+	public function itemsPreventFreeShipping($withItems = false)
 	{
-		$bool = false;
+		$retval = $withItems ? [] : false;
 
 		foreach ($this->items as $item) {
 			if ($item->preventsFreeShipping()) {
-				$bool = true;
-				break;
+				if ($withItems) {
+					array_push($retval, $item);
+				} else {
+					$retval = true;
+					break;
+				}
 			}
 		}
 
-		return $bool;
+		return $retval;
 	}
 
 	/**
@@ -639,11 +644,12 @@ class Cart extends Model implements CartContract, Adjustable
 
 	public function removeAllAdjustments()
 	{
-		$adjustments = $this->adjustments()->getIterator();
+		$this->adjustments()->relation()->delete();
+		/* $adjustments = $this->adjustments()->getIterator();
 
 		foreach ($adjustments as $adjustment) {
 			$this->removeAdjustment($adjustment);
-		}
+		} */
 	}
 
 	public function setShipping(ShipmentMethod $shipping)
@@ -795,27 +801,6 @@ class Cart extends Model implements CartContract, Adjustable
 				}
 			}
 		}
-
-		/* if ($coupon->isSpecificToProducts()) {
-			$products = $coupon->productsIds();
-
-			foreach ($products as $id) {
-				if ($item = $this->getItem($id) && isset($item)) {
-					if ($coupon->type == CouponType::PERCENTAGE()->value() || $coupon->type == CouponType::NUMERARY()->value()) {
-						$item->adjustments()->create(new CouponPercNum($this, $item, $coupon));
-					} else if ($coupon->type == CouponType::FREESHIPPING()->value()) {
-						$this->adjustments()->create(new CouponFreeShipping($this, $coupon));
-						break;
-					}
-				}
-			}
-		} else {
-			if ($coupon->type == CouponType::PERCENTAGE()->value() || $coupon->type == CouponType::NUMERARY()->value()) {
-				$this->adjustments()->create(new CouponPercNum($this, null, $coupon));
-			} else if ($coupon->type == CouponType::FREESHIPPING()->value()) {
-				$this->adjustments()->create(new CouponFreeShipping($this, $coupon));
-			}
-		} */
 	}
 
 	public function removeCoupon()
@@ -844,13 +829,15 @@ class Cart extends Model implements CartContract, Adjustable
 
 		if ($coupon->type == CouponType::FREESHIPPING()->value()) {
 			$shippingAdjustment = $this->getAdjustmentByType(AdjustmentTypeProxy::SHIPPING());
-			if ($coupon->type == 'free_shipping' && null !== $shippingAdjustment) {
+			if (null !== $shippingAdjustment) {
 				array_push($rules, new IsValidShippingAdjustment($coupon, $this, $shippingAdjustment));
 			}
 
 			if (isset($this->shipping) && isset($this->country)) {
 				array_push($rules, new CanBeUsedInZone($coupon, $this));
 			}
+
+			array_push($rules, new ProductsAllowFreeShipping($this));
 		}
 
 		$this->validator = Validator::make(['coupon_code' => $coupon->code], [
