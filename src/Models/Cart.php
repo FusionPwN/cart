@@ -443,6 +443,8 @@ class Cart extends Model implements CartContract, Adjustable
 			$item->updateStoreDiscountAdjustments($this);
 		}
 
+		$this->updateShippingFee();
+
 		if ($this->cartCoupon) {
 			$this->validateCoupon($this->cartCoupon->coupon);
 
@@ -453,8 +455,6 @@ class Cart extends Model implements CartContract, Adjustable
 				$this->updateCouponAdjustments($this->cartCoupon->coupon);
 			}
 		}
-
-		$this->updateShippingFee();
 
 		debug('FINISHED ADJUSTMENT UPDATES');
 	}
