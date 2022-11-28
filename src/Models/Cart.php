@@ -689,9 +689,9 @@ class Cart extends Model implements CartContract, Adjustable
 				throw new Exception('Shipping method uses weights but no zone was found');
 			}
 
-			$shippingWeight = $this->shipping->weightIntervalThatFitsCart($this)->first();
-
-			if (!isset($shippingWeight)) {
+			$shippingWeights = $this->shipping->weightIntervalThatFitsCart($this)->get();
+			
+			if (!isset($shippingWeights) && count($shippingWeights) == 0) {
 				throw new Exception('Shipping method uses weights but no weight was found');
 			}
 
@@ -699,7 +699,11 @@ class Cart extends Model implements CartContract, Adjustable
 				$threshold = $shippingZone->pivot->min_value ?? null;
 			}
 
-			$price = $shippingWeight->price;
+			foreach ($shippingWeights as $shippingWeight) {
+				if ($shippingWeight->zone_group_id == $shippingZone->id) {
+					$price = $shippingWeight->price;
+				}
+			}
 		}
 
 		$this->removeAdjustment(null, AdjustmentTypeProxy::SHIPPING());
