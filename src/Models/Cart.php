@@ -30,6 +30,7 @@ use App\Rules\Coupon\IsUserAllowed;
 use App\Rules\Coupon\IsValidShippingAdjustment;
 use App\Rules\Coupon\OrderHasMinValue;
 use App\Rules\Coupon\ProductsAllowFreeShipping;
+use Carbon\Carbon;
 use Exception;
 use Vanilo\Cart\Models\CartItemProxy;
 use Illuminate\Contracts\Auth\Authenticatable;
@@ -49,6 +50,8 @@ use Vanilo\Adjustments\Support\HasAdjustmentsViaRelation;
 use Vanilo\Adjustments\Support\RecalculatesAdjustments;
 use Illuminate\Support\Facades\Validator;
 use Vanilo\Adjustments\Contracts\AdjustmentType;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\DB;
 
 class Cart extends Model implements CartContract, Adjustable
 {
@@ -851,5 +854,71 @@ class Cart extends Model implements CartContract, Adjustable
 		]);
 		
 		return $this->validator;
+	}
+
+	public function scopeAbandoned(Builder $query, ?int $since = 5, ?string $type = 'MINUTE', ?bool $grouped = false, ?string $orderby = 'ASC')
+	{
+		$query->select(DB::raw("DATE_ADD(NOW(), INTERVAL -$since $type) AS since"), DB::raw('COUNT(*) AS count'))
+			->whereBetween('created_at', [DB::raw("DATE_ADD(NOW(), INTERVAL -$since $type)"), DB::raw('NOW()')]);
+
+		if ($grouped) {
+			$query->orderBy('created_at', $orderby)
+				->groupBy(DB::raw('DATE(created_at)'));
+		}
+
+		return $query;
+	}
+
+	public function scopeAbandonedWithinDates(Builder $query, $start, ?string $end = null, ?bool $grouped = false, ?string $orderby = 'ASC')
+	{
+		if (!isset($end)) {
+			$end = Carbon::now()->addDay();
+		} else {
+			$end = Carbon::parse($end)->addDay();
+		}
+
+		$query->select(DB::raw("DATE(created_at) AS since"), DB::raw('COUNT(*) AS count'))
+				->whereBetween('created_at', [DB::raw("DATE('$start')"), DB::raw("'$end'")]);
+
+		if ($grouped) {
+			$query->orderBy('created_at', $orderby)
+				->groupBy(DB::raw('DATE(created_at)'));
+		}
+
+		return $query;
+	}
+
+	public function scopeAbandonedToday(Builder $query, ?string $orderby = 'ASC')
+	{
+		return $query->select(DB::raw('DATE(created_at) AS created_at'), DB::raw('COUNT(*) AS count'))
+					->where(DB::raw('WEEK(DATE(created_at))'), DB::raw('WEEK(NOW())'))
+					->where(DB::raw('DAY(DATE(created_at))'), DB::raw('DAY(NOW())'))
+					->orderBy(DB::raw('DATE(created_at)'), $orderby)
+					->groupBy(DB::raw('DATE(created_at)'));
+	}
+
+	public function scopeAbandonedThisWeek(Builder $query, ?string $orderby = 'ASC')
+	{
+		return $query->select(DB::raw('DATE(created_at) AS created_at'), DB::raw('COUNT(*) AS count'))
+					->where(DB::raw('WEEK(DATE(created_at))'), DB::raw('WEEK(NOW())'))
+					->orderBy(DB::raw('DATE(created_at)'), $orderby)
+					->groupBy(DB::raw('DATE(created_at)'));
+	}
+
+	public function scopeAbandonedThisMonth(Builder $query, ?string $orderby = 'ASC')
+	{
+		return $query->select(DB::raw('DATE(created_at) AS created_at'), DB::raw('COUNT(*) AS count'))
+					->where(DB::raw('MONTH(DATE(created_at))'), DB::raw('MONTH(NOW())'))
+					->where(DB::raw('YEAR(DATE(created_at))'), DB::raw('YEAR(NOW())'))
+					->orderBy(DB::raw('DATE(created_at)'), $orderby)
+					->groupBy(DB::raw('DATE(created_at)'));
+	}
+
+	public function scopeAbandonedThisYear(Builder $query, ?string $orderby = 'ASC')
+	{
+		return $query->select(DB::raw('DATE(created_at) AS created_at'), DB::raw('COUNT(*) AS count'))
+					->where(DB::raw('YEAR(DATE(created_at))'), DB::raw('YEAR(NOW())'))
+					->orderBy(DB::raw('DATE(created_at)'), $orderby)
+					->groupBy(DB::raw('DATE(created_at)'));
 	}
 }
