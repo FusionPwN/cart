@@ -859,6 +859,7 @@ class Cart extends Model implements CartContract, Adjustable
 	public function scopeAbandoned(Builder $query, ?int $since = 5, ?string $type = 'MINUTE', ?bool $grouped = false, ?string $orderby = 'ASC')
 	{
 		$query->select(DB::raw("DATE_ADD(NOW(), INTERVAL -$since $type) AS since"), DB::raw('COUNT(*) AS count'))
+			->where('state', CartStateProxy::ABANDONED()->value())
 			->whereBetween('created_at', [DB::raw("DATE_ADD(NOW(), INTERVAL -$since $type)"), DB::raw('NOW()')]);
 
 		if ($grouped) {
@@ -878,6 +879,7 @@ class Cart extends Model implements CartContract, Adjustable
 		}
 
 		$query->select(DB::raw("DATE(created_at) AS since"), DB::raw('COUNT(*) AS count'))
+				->where('state', CartStateProxy::ABANDONED()->value())
 				->whereBetween('created_at', [DB::raw("DATE('$start')"), DB::raw("'$end'")]);
 
 		if ($grouped) {
@@ -891,6 +893,7 @@ class Cart extends Model implements CartContract, Adjustable
 	public function scopeAbandonedToday(Builder $query, ?string $orderby = 'ASC')
 	{
 		return $query->select(DB::raw('DATE(created_at) AS created_at'), DB::raw('COUNT(*) AS count'))
+					->where('state', CartStateProxy::ABANDONED()->value())
 					->where(DB::raw('WEEK(DATE(created_at))'), DB::raw('WEEK(NOW())'))
 					->where(DB::raw('DAY(DATE(created_at))'), DB::raw('DAY(NOW())'))
 					->orderBy(DB::raw('DATE(created_at)'), $orderby)
@@ -900,6 +903,7 @@ class Cart extends Model implements CartContract, Adjustable
 	public function scopeAbandonedThisWeek(Builder $query, ?string $orderby = 'ASC')
 	{
 		return $query->select(DB::raw('DATE(created_at) AS created_at'), DB::raw('COUNT(*) AS count'))
+			->where('state', CartStateProxy::ABANDONED()->value())
 					->where(DB::raw('WEEK(DATE(created_at))'), DB::raw('WEEK(NOW())'))
 					->orderBy(DB::raw('DATE(created_at)'), $orderby)
 					->groupBy(DB::raw('DATE(created_at)'));
@@ -908,6 +912,7 @@ class Cart extends Model implements CartContract, Adjustable
 	public function scopeAbandonedThisMonth(Builder $query, ?string $orderby = 'ASC')
 	{
 		return $query->select(DB::raw('DATE(created_at) AS created_at'), DB::raw('COUNT(*) AS count'))
+					->where('state', CartStateProxy::ABANDONED()->value())
 					->where(DB::raw('MONTH(DATE(created_at))'), DB::raw('MONTH(NOW())'))
 					->where(DB::raw('YEAR(DATE(created_at))'), DB::raw('YEAR(NOW())'))
 					->orderBy(DB::raw('DATE(created_at)'), $orderby)
@@ -917,6 +922,7 @@ class Cart extends Model implements CartContract, Adjustable
 	public function scopeAbandonedThisYear(Builder $query, ?string $orderby = 'ASC')
 	{
 		return $query->select(DB::raw('DATE(created_at) AS created_at'), DB::raw('COUNT(*) AS count'))
+					->where('state', CartStateProxy::ABANDONED()->value())
 					->where(DB::raw('YEAR(DATE(created_at))'), DB::raw('YEAR(NOW())'))
 					->orderBy(DB::raw('DATE(created_at)'), $orderby)
 					->groupBy(DB::raw('DATE(created_at)'));
