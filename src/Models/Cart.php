@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Vanilo\Cart\Models;
 
 use App\Classes\Utilities;
+use App\Models\Admin\Card;
 use Vanilo\Adjustments\Adjusters\CouponFreeShipping;
 use Vanilo\Adjustments\Adjusters\CouponPercNum;
 use Vanilo\Adjustments\Adjusters\DiscountFree;
@@ -49,6 +50,7 @@ use Vanilo\Adjustments\Models\AdjustmentTypeProxy;
 use Vanilo\Adjustments\Support\HasAdjustmentsViaRelation;
 use Vanilo\Adjustments\Support\RecalculatesAdjustments;
 use Illuminate\Support\Facades\Validator;
+use Vanilo\Adjustments\Adjusters\ClientCard;
 use Vanilo\Adjustments\Contracts\AdjustmentType;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
@@ -76,6 +78,7 @@ class Cart extends Model implements CartContract, Adjustable
 
 	public ShipmentMethod $shipping;
 	public Country $country;
+	public Card $card;
 
 	public static function boot()
 	{
@@ -459,6 +462,8 @@ class Cart extends Model implements CartContract, Adjustable
 			}
 		}
 
+		$this->updateClientCard();
+
 		debug('FINISHED ADJUSTMENT UPDATES');
 	}
 
@@ -469,6 +474,19 @@ class Cart extends Model implements CartContract, Adjustable
 	}
 
 	public function total(): float
+	{
+		$total = $this->itemsTotal() + $this->adjustments()->total();
+
+		$clientCardAdjustment = $this->adjustments()->byType(AdjustmentTypeProxy::CLIENT_CARD())->first();
+
+		if(isset($clientCardAdjustment)){
+			$total += abs(floatval($clientCardAdjustment->amount));
+		}
+
+		return $total;
+	}
+
+	public function totalWithCard(): float
 	{
 		return $this->itemsTotal() + $this->adjustments()->total();
 	}
@@ -660,6 +678,11 @@ class Cart extends Model implements CartContract, Adjustable
 		$this->shipping = $shipping;
 	}
 
+	public function setCard(Card $card)
+	{
+		$this->card = $card;
+	}
+
 	public function setCountry(Country $country)
 	{
 		$this->country = $country;
@@ -715,6 +738,20 @@ class Cart extends Model implements CartContract, Adjustable
 		return $shippingAdjustment;
 	}
 
+	public function updateClientCard(){
+		if(!isset($this->card)){
+			return false;
+		}
+
+		$balance = $this->card->balance() ?? 0;
+
+		$this->removeAdjustment(null, AdjustmentTypeProxy::CLIENT_CARD());
+
+		$clientCardAdjustment = $this->adjustments()->create(new ClientCard($balance,$this->card,$this));
+
+		return $clientCardAdjustment;
+	}
+
 	public function getShippingAdjustment(): ?Adjustment
 	{
 		$shippingAdjustment = $this->getAdjustmentByType(AdjustmentTypeProxy::SHIPPING());
@@ -736,6 +773,17 @@ class Cart extends Model implements CartContract, Adjustable
 		}
 
 		return $shippingAdjustment;
+	}
+
+	public function getClientCardAdjustment(): ?Adjustment
+	{
+		$clientCardAdjustment = $this->getAdjustmentByType(AdjustmentTypeProxy::CLIENT_CARD());
+
+		if (null !== $clientCardAdjustment) {
+			$clientCardAdjustment->display_amount = $clientCardAdjustment->getAmount();
+		}
+
+		return $clientCardAdjustment;
 	}
 
 	public function removeCouponAdjustments()
