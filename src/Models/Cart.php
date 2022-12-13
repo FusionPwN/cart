@@ -404,6 +404,17 @@ class Cart extends Model implements CartContract, Adjustable
 		return $conflictingDiscounts;
 	}
 
+	public function hasDirectDiscounts()
+	{
+		foreach($this->items as $item){
+			if($item->product->validDirectDiscount()){
+				return true;
+			}
+		}
+
+		return false;
+	}
+
 	public function updateAdjustments() {
 		debug('STARTING ADJUSTMENT UPDATES');
 		$this->removeCouponAdjustments();
