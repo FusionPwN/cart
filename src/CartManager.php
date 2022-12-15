@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Vanilo\Cart;
 
 use App\Events\UpdateCartState;
+use App\Models\Admin\Card;
 use App\Models\Admin\Coupon;
 use App\Models\Admin\ShipmentMethod;
 use Illuminate\Support\Collection;
@@ -156,6 +157,14 @@ class CartManager implements CartManagerContract
 	public function total(): float
 	{
 		return $this->exists() ? $this->model()->total() : 0;
+	}
+
+	/**
+	 * @inheritDoc
+	 */
+	public function totalWithCard(): float
+	{
+		return $this->exists() ? $this->model()->totalWithCard() : 0;
 	}
 
 	/**
@@ -367,6 +376,11 @@ class CartManager implements CartManagerContract
 		return $this->model()->setShipping($shipping);
 	}
 
+	public function setCard(Card $card)
+	{
+		return $this->model()->setCard($card);
+	}
+
 	public function setCountry(Country $country)
 	{
 		return $this->model()->setCountry($country);
@@ -377,6 +391,11 @@ class CartManager implements CartManagerContract
 		return $this->model()->updateShippingFee();
 	}
 
+	public function updateClientCard()
+	{
+		return $this->model()->updateClientCard();
+	}
+
 	public function updateAdjustments()
 	{
 		return $this->model()->updateAdjustments();
@@ -385,6 +404,11 @@ class CartManager implements CartManagerContract
 	public function getShippingAdjustment(): ?Adjustment
 	{
 		return $this->model()->getShippingAdjustment();
+	}
+
+	public function getClientCardAdjustment(): ?Adjustment
+	{
+		return $this->model()->getClientCardAdjustment();
 	}
 
 	public function applyCoupon(Coupon $coupon)
