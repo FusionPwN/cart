@@ -257,10 +257,14 @@ class Cart extends Model implements CartContract, Adjustable
 				'error' => 'not-enough-stock'
 			];
 		}
-
+		
 		if ($item) {
-			$item->quantity = $qty;
-			$item->save();
+			if ($qty > 0) {
+				$item->quantity = $qty;
+				$item->save();
+			} else {
+				$this->removeItem($item);
+			}
 		}
 
 		$this->load('items');

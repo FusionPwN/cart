@@ -64,7 +64,7 @@ class CartManager implements CartManagerContract
 	/**
 	 * @inheritDoc
 	 */
-	public function getItem($id): CartItem
+	public function getItem($id): ?CartItem
 	{
 		return $this->exists() ? $this->model()->getItem($id) : false;
 	}
@@ -347,7 +347,7 @@ class CartManager implements CartManagerContract
 		return $this->setCartModel(CartProxy::create($attributes ?? []));
 	}
 
-	protected function setCartModel(CartContract $cart): CartContract
+	public function setCartModel(CartContract $cart): CartContract
 	{
 		$this->cart = $cart;
 
