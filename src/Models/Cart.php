@@ -96,8 +96,25 @@ class Cart extends Model implements CartContract, Adjustable
 
 	public function cartInit()
 	{
+		if ($this->state->isLoading()) {
+			return;
+		}
+
+		$this->setLoadingState();
 		$this->buildCartGlobals();
 		$this->updateAdjustments();
+	}
+
+	public function setLoadingState()
+	{
+		$this->state = CartStateProxy::LOADING();
+		$this->save();
+	}
+
+	public function resetState()
+	{
+		$this->state = CartStateProxy::ACTIVE();
+		$this->save();
 	}
 
 	/**
@@ -150,7 +167,7 @@ class Cart extends Model implements CartContract, Adjustable
 					}
 
 					$free_quantity = $adjustment->getData('quantity');
-					if($adjustment->type != AdjustmentTypeProxy::OFERTA_PROD_IGUAL() &&  $adjustment->type != AdjustmentTypeProxy::OFERTA_PROD()){
+					if ($adjustment->type != AdjustmentTypeProxy::OFERTA_PROD_IGUAL() &&  $adjustment->type != AdjustmentTypeProxy::OFERTA_PROD()) {
 						$item->display_quantity -= $free_quantity;
 					}
 					$free_item->display_quantity = $free_quantity;
@@ -206,7 +223,9 @@ class Cart extends Model implements CartContract, Adjustable
 	public function hasItems($ids): bool
 	{
 		foreach ($ids as $id) {
-			if ($this->hasItem($id)) { return true; }
+			if ($this->hasItem($id)) {
+				return true;
+			}
 		}
 
 		return false;
@@ -257,7 +276,7 @@ class Cart extends Model implements CartContract, Adjustable
 				'error' => 'not-enough-stock'
 			];
 		}
-		
+
 		if ($item) {
 			if ($qty > 0) {
 				$item->quantity = $qty;
@@ -304,7 +323,7 @@ class Cart extends Model implements CartContract, Adjustable
 	public function clear()
 	{
 		# os items tem de ser removidos 1 a 1 caso contrario nao elimina os adjustments dos items
-		foreach($this->items as $item) {
+		foreach ($this->items as $item) {
 			$item->delete();
 		}
 
@@ -314,7 +333,8 @@ class Cart extends Model implements CartContract, Adjustable
 		$this->load('items');
 	}
 
-	public function getProductDiscounts() {
+	public function getProductDiscounts()
+	{
 		$discounts = [];
 
 		foreach ($this->items as $item) {
@@ -337,7 +357,8 @@ class Cart extends Model implements CartContract, Adjustable
 		return $discounts;
 	}
 
-	public function getApplyableDiscounts() {
+	public function getApplyableDiscounts()
+	{
 		$applyableDiscounts = [];
 
 		foreach ($this->discounts as &$discount) {
@@ -372,7 +393,7 @@ class Cart extends Model implements CartContract, Adjustable
 					# não está completamente implementado
 					if ($cart_items->sum('quantity') >= $discount_data->num_min_buy) {
 						$discount['cart_items'] = $discount['cart_items']->sortBy('price_vat');
-						
+
 						$applyableDiscounts[$discount_data->id] = $discount;
 					}
 					break;
@@ -384,7 +405,8 @@ class Cart extends Model implements CartContract, Adjustable
 		return $applyableDiscounts;
 	}
 
-	public function getConflictingDiscounts() {
+	public function getConflictingDiscounts()
+	{
 		$conflictingDiscounts = [];
 
 		foreach ($this->applyableDiscounts as $discount) {
@@ -410,8 +432,8 @@ class Cart extends Model implements CartContract, Adjustable
 
 	public function hasDirectDiscounts()
 	{
-		foreach($this->items as $item){
-			if($item->product->validDirectDiscount()){
+		foreach ($this->items as $item) {
+			if ($item->product->validDirectDiscount()) {
 				return true;
 			}
 		}
@@ -419,7 +441,8 @@ class Cart extends Model implements CartContract, Adjustable
 		return false;
 	}
 
-	public function updateAdjustments() {
+	public function updateAdjustments()
+	{
 		debug('STARTING ADJUSTMENT UPDATES');
 		$this->removeCouponAdjustments();
 		$this->removeAllAdjustments();
@@ -439,13 +462,13 @@ class Cart extends Model implements CartContract, Adjustable
 				} else if ($discount['tag'] == 'oferta_barato') {
 					$adjustment = $item->adjustments()->create(new DiscountLeastExpensiveFree($this, $item, $discount_data));
 
-					if($adjustment->getData('remainder_quantity')){
-						if($adjustment->getData('remainder_quantity') == 0){
+					if ($adjustment->getData('remainder_quantity')) {
+						if ($adjustment->getData('remainder_quantity') == 0) {
 							break;
-						}else{
+						} else {
 							$discount_data['remainder_quantity'] = $adjustment->getData('remainder_quantity');
 						}
-					}else{
+					} else {
 						break; # break pq este desconto só vai ser aplicado 1x
 					}
 				} else if ($discount['tag'] == 'oferta_prod_igual') {
@@ -479,10 +502,13 @@ class Cart extends Model implements CartContract, Adjustable
 
 		$this->updateClientCard();
 
+		$this->resetState();
+
 		debug('FINISHED ADJUSTMENT UPDATES');
 	}
 
-	public function buildCartGlobals() {
+	public function buildCartGlobals()
+	{
 		$this->discounts = $this->getProductDiscounts();
 		$this->applyableDiscounts = $this->getApplyableDiscounts();
 		$this->conflictingDiscounts = $this->getConflictingDiscounts();
@@ -494,7 +520,7 @@ class Cart extends Model implements CartContract, Adjustable
 
 		$clientCardAdjustment = $this->adjustments()->byType(AdjustmentTypeProxy::CLIENT_CARD())->first();
 
-		if(isset($clientCardAdjustment)){
+		if (isset($clientCardAdjustment)) {
 			$total += abs(floatval($clientCardAdjustment->amount));
 		}
 
@@ -518,7 +544,7 @@ class Cart extends Model implements CartContract, Adjustable
 
 	public function itemsVatTotal(): float
 	{
-		return $this->items->sum(function($item) {
+		return $this->items->sum(function ($item) {
 			return $item->vatTotal();
 		});
 	}
@@ -535,13 +561,13 @@ class Cart extends Model implements CartContract, Adjustable
 		$subtotal = $this->total();
 		$shippingAdjustment = $this->getShippingAdjustment();
 		$subtotal -= isset($shippingAdjustment) ? $shippingAdjustment->getAmount() : 0;
-		
+
 		return $subtotal;
 	}
 
 	public function weight(): float
 	{
-		return (float) $this->items->sum(function($item) {
+		return (float) $this->items->sum(function ($item) {
 			return (float) $item->weight();
 		});
 	}
@@ -664,10 +690,11 @@ class Cart extends Model implements CartContract, Adjustable
 		return $result;
 	}
 
-	public function removeAdjustment(Adjustment $adjustment = null, AdjustmentType $type = null) {
+	public function removeAdjustment(Adjustment $adjustment = null, AdjustmentType $type = null)
+	{
 		if (isset($type)) {
 			$type = Str::upper($type->value());
-			
+
 			$adjustment = $this->adjustments()->byType(AdjustmentTypeProxy::$type())->first();
 
 			if (isset($adjustment)) {
@@ -718,7 +745,9 @@ class Cart extends Model implements CartContract, Adjustable
 
 	public function updateShippingFee()
 	{
-		if (!isset($this->shipping) || !isset($this->country)) { return false; }
+		if (!isset($this->shipping) || !isset($this->country)) {
+			return false;
+		}
 
 		$price = $this->shipping->price ?? 0;
 		$threshold = null;
@@ -731,7 +760,7 @@ class Cart extends Model implements CartContract, Adjustable
 			}
 
 			$shippingWeights = $this->shipping->weightIntervalThatFitsCart($this)->get();
-			
+
 			if (!isset($shippingWeights) && count($shippingWeights) == 0) {
 				throw new Exception('Shipping method uses weights but no weight was found');
 			}
@@ -753,8 +782,9 @@ class Cart extends Model implements CartContract, Adjustable
 		return $shippingAdjustment;
 	}
 
-	public function updateClientCard(){
-		if(!isset($this->card)){
+	public function updateClientCard()
+	{
+		if (!isset($this->card)) {
 			return false;
 		}
 
@@ -762,7 +792,7 @@ class Cart extends Model implements CartContract, Adjustable
 
 		$this->removeAdjustment(null, AdjustmentTypeProxy::CLIENT_CARD());
 
-		$clientCardAdjustment = $this->adjustments()->create(new ClientCard($balance,$this->card,$this));
+		$clientCardAdjustment = $this->adjustments()->create(new ClientCard($balance, $this->card, $this));
 
 		return $clientCardAdjustment;
 	}
@@ -813,7 +843,7 @@ class Cart extends Model implements CartContract, Adjustable
 		}
 	}
 
-	public function getAdjustmentsTotals(): Array
+	public function getAdjustmentsTotals(): array
 	{
 		$adjTypes = AdjustmentTypeProxy::choices();
 
@@ -832,7 +862,7 @@ class Cart extends Model implements CartContract, Adjustable
 				$const = Str::upper($key);
 
 				$value['total'] += $item->adjustments()->byType(AdjustmentTypeProxy::$const())->total();
-				$value['total'] = Utilities::FormatPrice($value['total'],2,',','.');
+				$value['total'] = Utilities::FormatPrice($value['total'], 2, ',', '.');
 			}
 		}
 
@@ -915,7 +945,7 @@ class Cart extends Model implements CartContract, Adjustable
 		], [], [
 			'coupon_code' => strtolower(__('frontoffice.coupon_checkout'))
 		]);
-		
+
 		return $this->validator;
 	}
 
@@ -942,8 +972,8 @@ class Cart extends Model implements CartContract, Adjustable
 		}
 
 		$query->select(DB::raw("DATE(created_at) AS since"), DB::raw('COUNT(*) AS count'))
-				->where('state', CartStateProxy::ABANDONDED()->value())
-				->whereBetween('created_at', [DB::raw("DATE('$start')"), DB::raw("'$end'")]);
+			->where('state', CartStateProxy::ABANDONDED()->value())
+			->whereBetween('created_at', [DB::raw("DATE('$start')"), DB::raw("'$end'")]);
 
 		if ($grouped) {
 			$query->orderBy('created_at', $orderby)
@@ -956,38 +986,38 @@ class Cart extends Model implements CartContract, Adjustable
 	public function scopeAbandondedToday(Builder $query, ?string $orderby = 'ASC')
 	{
 		return $query->select(DB::raw('DATE(created_at) AS created_at'), DB::raw('COUNT(*) AS count'))
-					->where('state', CartStateProxy::ABANDONDED()->value())
-					->where(DB::raw('WEEK(DATE(created_at))'), DB::raw('WEEK(NOW())'))
-					->where(DB::raw('DAY(DATE(created_at))'), DB::raw('DAY(NOW())'))
-					->orderBy(DB::raw('DATE(created_at)'), $orderby)
-					->groupBy(DB::raw('DATE(created_at)'));
+			->where('state', CartStateProxy::ABANDONDED()->value())
+			->where(DB::raw('WEEK(DATE(created_at))'), DB::raw('WEEK(NOW())'))
+			->where(DB::raw('DAY(DATE(created_at))'), DB::raw('DAY(NOW())'))
+			->orderBy(DB::raw('DATE(created_at)'), $orderby)
+			->groupBy(DB::raw('DATE(created_at)'));
 	}
 
 	public function scopeAbandondedThisWeek(Builder $query, ?string $orderby = 'ASC')
 	{
 		return $query->select(DB::raw('DATE(created_at) AS created_at'), DB::raw('COUNT(*) AS count'))
 			->where('state', CartStateProxy::ABANDONDED()->value())
-					->where(DB::raw('WEEK(DATE(created_at))'), DB::raw('WEEK(NOW())'))
-					->orderBy(DB::raw('DATE(created_at)'), $orderby)
-					->groupBy(DB::raw('DATE(created_at)'));
+			->where(DB::raw('WEEK(DATE(created_at))'), DB::raw('WEEK(NOW())'))
+			->orderBy(DB::raw('DATE(created_at)'), $orderby)
+			->groupBy(DB::raw('DATE(created_at)'));
 	}
 
 	public function scopeAbandondedThisMonth(Builder $query, ?string $orderby = 'ASC')
 	{
 		return $query->select(DB::raw('DATE(created_at) AS created_at'), DB::raw('COUNT(*) AS count'))
-					->where('state', CartStateProxy::ABANDONDED()->value())
-					->where(DB::raw('MONTH(DATE(created_at))'), DB::raw('MONTH(NOW())'))
-					->where(DB::raw('YEAR(DATE(created_at))'), DB::raw('YEAR(NOW())'))
-					->orderBy(DB::raw('DATE(created_at)'), $orderby)
-					->groupBy(DB::raw('DATE(created_at)'));
+			->where('state', CartStateProxy::ABANDONDED()->value())
+			->where(DB::raw('MONTH(DATE(created_at))'), DB::raw('MONTH(NOW())'))
+			->where(DB::raw('YEAR(DATE(created_at))'), DB::raw('YEAR(NOW())'))
+			->orderBy(DB::raw('DATE(created_at)'), $orderby)
+			->groupBy(DB::raw('DATE(created_at)'));
 	}
 
 	public function scopeAbandondedThisYear(Builder $query, ?string $orderby = 'ASC')
 	{
 		return $query->select(DB::raw('DATE(created_at) AS created_at'), DB::raw('COUNT(*) AS count'))
-					->where('state', CartStateProxy::ABANDONDED()->value())
-					->where(DB::raw('YEAR(DATE(created_at))'), DB::raw('YEAR(NOW())'))
-					->orderBy(DB::raw('DATE(created_at)'), $orderby)
-					->groupBy(DB::raw('DATE(created_at)'));
+			->where('state', CartStateProxy::ABANDONDED()->value())
+			->where(DB::raw('YEAR(DATE(created_at))'), DB::raw('YEAR(NOW())'))
+			->orderBy(DB::raw('DATE(created_at)'), $orderby)
+			->groupBy(DB::raw('DATE(created_at)'));
 	}
 }
