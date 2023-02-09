@@ -200,21 +200,19 @@ trait CheckoutFunctions
 			$item->updateStoreDiscountAdjustments($this);
 		}
 
-		if ($this->coupon) {
-			$this->validateCoupon($this->coupon);
+		if ($this->coupon->first()) {
+			$this->validateCoupon($this->coupon->first());
 
 			if ($this->validator->fails()) {
 				$this->activeCoupon = null;
 			} else {
-				$this->activeCoupon = $this->coupon;
-				$this->updateCouponAdjustments($this->coupon);
+				$this->activeCoupon = $this->coupon->first();
+				$this->updateCouponAdjustments($this->coupon->first());
 			}
 		}
 
 		$this->updateShippingFee();
-
 		$this->updateClientCard();
-
 		$this->resetState();
 
 		debug('FINISHED ADJUSTMENT UPDATES');
