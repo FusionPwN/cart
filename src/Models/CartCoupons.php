@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Relations\Pivot;
 
 class CartCoupons extends Pivot
 {
+	public $incrementing = true;
+	
 	/* protected $guarded = [
 		'id',
 		'created_at',
