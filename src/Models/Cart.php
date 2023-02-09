@@ -920,7 +920,7 @@ class Cart extends Model implements CartContract, Adjustable
 			new IsCouponActive($coupon, $this),
 			new IsStartDateValid($coupon, $this),
 			new IsCouponExpired($coupon, $this),
-			new HasUsesLeft($coupon, $this),
+			new HasUsesLeft($coupon, $this, $user),
 			new IsUserAllowed($coupon, $this, $user),
 			new OrderHasMinValue($coupon, $this),
 			new CanBeUsedWithDiscounts($coupon, $this),
