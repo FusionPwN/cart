@@ -2,12 +2,12 @@
 
 namespace Vanilo\Cart\Models;
 
-use Illuminate\Database\Eloquent\Model;
 use App\Models\Admin\Coupon;
+use Illuminate\Database\Eloquent\Relations\Pivot;
 
-class CartCoupons extends Model
+class CartCoupons extends Pivot
 {
-	protected $guarded = [
+	/* protected $guarded = [
 		'id',
 		'created_at',
 		'updated_at'
@@ -21,5 +21,5 @@ class CartCoupons extends Model
 	public function cart()
 	{
 		return $this->hasOne(Cart::class, 'id', 'cart_id');
-	}
+	} */
 }
