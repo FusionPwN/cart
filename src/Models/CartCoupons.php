@@ -7,8 +7,15 @@ use Illuminate\Database\Eloquent\Relations\Pivot;
 
 class CartCoupons extends Pivot
 {
+	/**
+	 * Indicates if the IDs are auto-incrementing.
+	 *
+	 * @var bool
+	 */
 	public $incrementing = true;
-	
+
+	public $table = 'cart_coupons';
+
 	/* protected $guarded = [
 		'id',
 		'created_at',
