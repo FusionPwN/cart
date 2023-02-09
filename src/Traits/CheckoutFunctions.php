@@ -425,9 +425,7 @@ trait CheckoutFunctions
 	 */
 	public function applyCoupon(Coupon $coupon)
 	{
-		return $this->coupon->create([
-			'coupon_id' => $coupon->id,
-		]);
+		return $this->coupon->attach($coupon);
 	}
 
 	public function updateCouponAdjustments(Coupon $coupon)
@@ -492,5 +490,15 @@ trait CheckoutFunctions
 		]);
 
 		return $this->validator;
+	}
+
+	public function validator()
+	{
+		return isset($this->validator) ? $this->validator : null;
+	}
+
+	public function getActiveCoupon(): ?Coupon
+	{
+		return isset($this->activeCoupon) ? $this->activeCoupon : null;
 	}
 }

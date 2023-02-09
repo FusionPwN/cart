@@ -433,11 +433,11 @@ class CartManager implements CartManagerContract
 
 	public function validator()
 	{
-		return isset($this->model()->validator) ? $this->model()->validator : null;
+		return $this->exists() ? $this->model()->validator() : null;
 	}
 
 	public function getActiveCoupon(): ?Coupon
 	{
-		return isset($this->model()->activeCoupon) ? $this->model()->activeCoupon : null;
+		return $this->exists() ? $this->model()->getActiveCoupon() : null;
 	}
 }
