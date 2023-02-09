@@ -7,6 +7,7 @@ use App\Models\Admin\Card;
 use App\Models\Admin\Coupon;
 use App\Models\Admin\CouponType;
 use App\Models\Admin\ShipmentMethod;
+use App\Models\CartCoupons;
 use App\Rules\Coupon\CanBeUsedInZone;
 use App\Rules\Coupon\CanBeUsedWithDiscounts;
 use App\Rules\Coupon\CanBeUsedWithProducts;
