@@ -425,7 +425,7 @@ trait CheckoutFunctions
 	 */
 	public function applyCoupon(Coupon $coupon)
 	{
-		return $this->coupon->attach($coupon);
+		return $this->coupon()->attach($coupon);
 	}
 
 	public function updateCouponAdjustments(Coupon $coupon)
@@ -450,7 +450,7 @@ trait CheckoutFunctions
 	{
 		$this->removeCouponAdjustments();
 		if (count($this->coupon) > 0) {
-			$this->coupon()->detatch();
+			$this->coupon()->sync([]);
 		}
 	}
 
