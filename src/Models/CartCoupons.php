@@ -14,7 +14,7 @@ class CartCoupons extends Pivot
 	 */
 	public $incrementing = true;
 
-	public $table = 'cart_coupons';
+	protected $table = 'cart_coupons';
 
 	/* protected $guarded = [
 		'id',
