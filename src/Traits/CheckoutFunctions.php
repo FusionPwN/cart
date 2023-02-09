@@ -36,7 +36,7 @@ use Vanilo\Adjustments\Models\AdjustmentTypeProxy;
 use Illuminate\Support\Str;
 use Vanilo\Adjustments\Adjusters\CouponFreeShipping;
 use Vanilo\Adjustments\Adjusters\CouponPercNum;
-use Vanilo\Cart\Models\CartCouponsProxy;
+use Vanilo\Cart\Models\CartCoupons;
 
 trait CheckoutFunctions
 {
@@ -54,7 +54,7 @@ trait CheckoutFunctions
 	public function coupon()
 	{
 		#return $this->hasOne(CartCoupons::class, 'cart_id', 'id');
-		return $this->hasOneThrough(CartCouponsProxy::modelClass(), Coupon::class);
+		return $this->hasOneThrough(CartCoupons::class, Coupon::class);
 	}
 
 	public function getProductDiscounts()
