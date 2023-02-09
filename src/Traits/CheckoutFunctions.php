@@ -425,7 +425,7 @@ trait CheckoutFunctions
 	 */
 	public function applyCoupon(Coupon $coupon)
 	{
-		return $this->coupon()->attach($coupon);
+		$this->coupon()->attach($coupon);
 	}
 
 	public function updateCouponAdjustments(Coupon $coupon)
