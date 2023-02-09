@@ -449,8 +449,8 @@ trait CheckoutFunctions
 	public function removeCoupon()
 	{
 		$this->removeCouponAdjustments();
-		if (isset($this->cartCoupon)) {
-			$this->cartCoupon->delete();
+		if (count($this->coupon) > 0) {
+			$this->coupon()->detatch();
 		}
 	}
 
