@@ -54,7 +54,7 @@ trait CheckoutFunctions
 	public function coupon()
 	{
 		#return $this->hasOne(CartCoupons::class, 'cart_id', 'id');
-		return $this->belongsToMany(Coupon::class)->using(CartCoupons::class);
+		return $this->belongsToMany(Coupon::class, 'cart_coupons')->using(CartCoupons::class);
 	}
 
 	public function getProductDiscounts()
