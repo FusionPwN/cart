@@ -7,7 +7,6 @@ use App\Models\Admin\Card;
 use App\Models\Admin\Coupon;
 use App\Models\Admin\CouponType;
 use App\Models\Admin\ShipmentMethod;
-use App\Models\CartCoupons;
 use App\Rules\Coupon\CanBeUsedInZone;
 use App\Rules\Coupon\CanBeUsedWithDiscounts;
 use App\Rules\Coupon\CanBeUsedWithProducts;
@@ -37,6 +36,7 @@ use Vanilo\Adjustments\Models\AdjustmentTypeProxy;
 use Illuminate\Support\Str;
 use Vanilo\Adjustments\Adjusters\CouponFreeShipping;
 use Vanilo\Adjustments\Adjusters\CouponPercNum;
+use Vanilo\Cart\Models\CartCouponsProxy;
 
 trait CheckoutFunctions
 {
@@ -54,7 +54,7 @@ trait CheckoutFunctions
 	public function coupon()
 	{
 		#return $this->hasOne(CartCoupons::class, 'cart_id', 'id');
-		return $this->hasOneThrough(CartCoupons::class, Coupon::class);
+		return $this->hasOneThrough(CartCouponsProxy::modelClass(), Coupon::class);
 	}
 
 	public function getProductDiscounts()
