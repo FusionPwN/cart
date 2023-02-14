@@ -441,6 +441,36 @@ class Cart extends Model implements CartContract, Adjustable
 		return false;
 	}
 
+	public function hasDiscountsForProducts(Collection $ids)
+	{
+		$bool = false;
+
+		foreach ($this->applyableDiscounts as $discount) {
+			foreach ($discount['cart_items'] as $item) {
+				if (count($ids->where('product_id',$item->product->id)) > 0) {
+					$bool = true;
+					break;
+				}
+			}
+		}
+
+		return $bool;
+	}
+
+	public function hasDirectDiscountsForProducts(Collection $ids)
+	{
+		$bool = false;
+
+		foreach ($this->items as $item) {
+			if (count($ids->where('product_id',$item->product->id)) > 0 && $item->product->validDirectDiscount()) {
+				$bool = true;
+				break;
+			}
+		}
+
+		return $bool;
+	}
+
 	public function updateAdjustments()
 	{
 		debug('STARTING ADJUSTMENT UPDATES');
