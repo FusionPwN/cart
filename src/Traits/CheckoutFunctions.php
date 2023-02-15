@@ -48,7 +48,7 @@ trait CheckoutFunctions
 	public $activeCoupon;
 
 	public ShipmentMethod $shipping;
-	public Country $country;
+	public Country $selectedCountry;
 	public Card $card;
 
 	public function coupon()
@@ -278,7 +278,7 @@ trait CheckoutFunctions
 
 	public function setCountry(Country $country)
 	{
-		$this->country = $country;
+		$this->selectedCountry = $country;
 	}
 
 	public function getAdjustmentByType(AdjustmentType $type = null)
@@ -296,7 +296,7 @@ trait CheckoutFunctions
 
 	public function updateShippingFee()
 	{
-		if (!isset($this->shipping) || !isset($this->country)) {
+		if (!isset($this->shipping) || !isset($this->selectedCountry)) {
 			return false;
 		}
 
@@ -304,7 +304,7 @@ trait CheckoutFunctions
 		$threshold = null;
 
 		if ($this->shipping->usesWeight()) {
-			$shippingZone = $this->shipping->whereHasZonesAndCountry($this->country)->first()->zones->first();
+			$shippingZone = $this->shipping->whereHasZonesAndCountry($this->selectedCountry)->first()->zones->first();
 
 			if (!isset($shippingZone) || !isset($shippingZone->pivot)) {
 				throw new Exception('Shipping method uses weights but no zone was found');
@@ -522,7 +522,7 @@ trait CheckoutFunctions
 				array_push($rules, new IsValidShippingAdjustment($coupon, $this, $shippingAdjustment));
 			}
 
-			if (isset($this->shipping) && isset($this->country)) {
+			if (isset($this->shipping) && isset($this->selectedCountry)) {
 				array_push($rules, new CanBeUsedInZone($coupon, $this));
 			}
 
