@@ -19,9 +19,9 @@ use Illuminate\Support\Str;
 use Vanilo\Adjustments\Contracts\Adjustable;
 use Vanilo\Adjustments\Contracts\AdjustmentType;
 use Vanilo\Adjustments\Models\Adjustment;
-use Vanilo\Adjustments\Models\AdjustmentTypeProxy;
 use Vanilo\Adjustments\Support\HasAdjustmentsViaRelation;
 use Vanilo\Adjustments\Support\RecalculatesAdjustments;
+use Vanilo\Cart\Traits\CheckoutItemFunctions;
 
 /**
  * @property Buyable $product
@@ -32,6 +32,7 @@ class CartItem extends Model implements CartItemContract, Adjustable
 	use HasAdjustmentsViaRelation;
 	use RecalculatesAdjustments;
 	use ProductItem;
+	use CheckoutItemFunctions;
 
 	protected $guarded = ['id', 'created_at', 'updated_at'];
 
@@ -62,67 +63,9 @@ class CartItem extends Model implements CartItemContract, Adjustable
 		return (float) $this->itemsTotal();
 	}
 
-	public function itemsTotal(): float
-	{
-		return (float) ($this->getAdjustedPrice() * $this->quantity());
-	}
-
-	public function adjustmentsTotal(): float
-	{
-		$adj_total = 0;
-
-		foreach ($this->adjustments()->getIterator() as $adjustment) {
-			if (!AdjustmentTypeProxy::IsVisualSeparator($adjustment->type)) {
-				$adj_total += $adjustment->getAmount();
-			}
-		}
-
-		return (float) $adj_total;
-	}
-
-	public function quantity(): int
-	{
-		$adj_quantity = 0;
-
-		foreach ($this->adjustments()->getIterator() as $adjustment) {
-			if ($adjustment->type == AdjustmentTypeProxy::OFERTA_BARATO()) {
-				$adj_quantity += $adjustment->getData('quantity') ?? 0;
-			}
-		}
-
-		return (int) $this->quantity - $adj_quantity;
-	}
-
 	public function vatTotal(): float
 	{
 		return (float) $this->itemVatTotal();
-	}
-
-	public function itemVatTotal(): float
-	{
-		# PVP - (PVP / (1 + (IVA / 100)))
-		return (float) $this->total() - ($this->total() / (1 + $this->product->getVat()));
-	}
-
-	/**
-	 * Preco unitário com descontos
-	 *
-	 * @return float
-	 */
-	public function getAdjustedPrice(): float
-	{
-		$price = $this->product->getPriceVat();
-		$adjustments = $this->adjustments()->getIterator();
-
-		if (isset($adjustments)) {
-			foreach ($adjustments as $adjustment) {
-				if (!AdjustmentTypeProxy::IsVisualSeparator($adjustment->type)) {
-					$price -= (float) $adjustment->getData('single_amount');
-				}
-			}
-		}
-
-		return $price;
 	}
 
 	public function weight(): float
@@ -155,16 +98,6 @@ class CartItem extends Model implements CartItemContract, Adjustable
 	public function getQuantity(): int
 	{
 		return (int) $this->quantity();
-	}
-
-	/**
-	 * Check if Product prevents free shipping
-	 *
-	 * @return bool
-	 */
-	public function preventsFreeShipping(): bool
-	{
-		return $this->product->preventsFreeShipping();
 	}
 
 	/**

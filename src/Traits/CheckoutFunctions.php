@@ -19,7 +19,6 @@ use App\Rules\Coupon\IsValidShippingAdjustment;
 use App\Rules\Coupon\OrderHasMinValue;
 use App\Rules\Coupon\ProductsAllowFreeShipping;
 use Exception;
-use Illuminate\Database\Eloquent\Relations\HasOneThrough;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 use Konekt\Address\Models\Country;
@@ -37,6 +36,7 @@ use Illuminate\Support\Str;
 use Vanilo\Adjustments\Adjusters\CouponFreeShipping;
 use Vanilo\Adjustments\Adjusters\CouponPercNum;
 use Vanilo\Cart\Models\CartCoupons;
+use Illuminate\Support\Collection;
 
 trait CheckoutFunctions
 {
@@ -236,6 +236,11 @@ trait CheckoutFunctions
 		return $retval;
 	}
 
+	public function itemsTotal(): float
+	{
+		return $this->items->sum('total');
+	}
+
 	public function removeAdjustment(Adjustment $adjustment = null, AdjustmentType $type = null)
 	{
 		if (isset($type)) {
@@ -413,6 +418,47 @@ trait CheckoutFunctions
 		}
 
 		return $adjTypes;
+	}
+
+	public function hasDirectDiscounts()
+	{
+		foreach ($this->items as $item) {
+			if ($item->product->validDirectDiscount()) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	public function hasDiscountsForProducts(Collection $ids)
+	{
+		$bool = false;
+
+		foreach ($this->applyableDiscounts as $discount) {
+			foreach ($discount['cart_items'] as $item) {
+				if (count($ids->where('product_id', $item->product->id)) > 0) {
+					$bool = true;
+					break;
+				}
+			}
+		}
+
+		return $bool;
+	}
+
+	public function hasDirectDiscountsForProducts(Collection $ids)
+	{
+		$bool = false;
+
+		foreach ($this->items as $item) {
+			if (count($ids->where('product_id', $item->product->id)) > 0 && $item->product->validDirectDiscount()) {
+				$bool = true;
+				break;
+			}
+		}
+
+		return $bool;
 	}
 
 	/**

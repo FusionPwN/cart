@@ -4,31 +4,14 @@ declare(strict_types=1);
 
 namespace Vanilo\Cart\Models;
 
-use Vanilo\Adjustments\Adjusters\CouponFreeShipping;
-use Vanilo\Adjustments\Adjusters\CouponPercNum;
-use App\Models\Admin\Coupon;
 use Vanilo\Cart\Contracts\Cart as CartContract;
 use Vanilo\Contracts\Buyable;
-use App\Models\Admin\CouponType;
 use App\Models\Admin\Product;
-use App\Rules\Coupon\CanBeUsedInZone;
-use App\Rules\Coupon\CanBeUsedWithDiscounts;
-use App\Rules\Coupon\CanBeUsedWithProducts;
-use App\Rules\Coupon\HasUsesLeft;
-use App\Rules\Coupon\IsCouponActive;
-use App\Rules\Coupon\IsCouponExpired;
-use App\Rules\Coupon\IsStartDateValid;
-use App\Rules\Coupon\IsUserAllowed;
-use App\Rules\Coupon\IsValidShippingAdjustment;
-use App\Rules\Coupon\OrderHasMinValue;
-use App\Rules\Coupon\ProductsAllowFreeShipping;
 use Carbon\Carbon;
 use Vanilo\Cart\Models\CartItemProxy;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Konekt\Enum\Eloquent\CastsEnums;
 use Vanilo\Cart\Exceptions\InvalidCartConfigurationException;
@@ -36,7 +19,6 @@ use Vanilo\Adjustments\Contracts\Adjustable;
 use Vanilo\Adjustments\Models\AdjustmentTypeProxy;
 use Vanilo\Adjustments\Support\HasAdjustmentsViaRelation;
 use Vanilo\Adjustments\Support\RecalculatesAdjustments;
-use Illuminate\Support\Facades\Validator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
 use Vanilo\Cart\Traits\CheckoutFunctions;
@@ -304,17 +286,6 @@ class Cart extends Model implements CartContract, Adjustable
 		$this->load('items');
 	}
 
-	public function hasDirectDiscounts()
-	{
-		foreach ($this->items as $item) {
-			if ($item->product->validDirectDiscount()) {
-				return true;
-			}
-		}
-
-		return false;
-	}
-
 	public function buildCartGlobals()
 	{
 		$this->discounts = $this->getProductDiscounts();
@@ -338,11 +309,6 @@ class Cart extends Model implements CartContract, Adjustable
 	public function totalWithCard(): float
 	{
 		return $this->itemsTotal() + $this->adjustments()->total();
-	}
-
-	public function itemsTotal(): float
-	{
-		return $this->items->sum('total');
 	}
 
 	public function vatTotal(): float
