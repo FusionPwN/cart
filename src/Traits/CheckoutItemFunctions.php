@@ -12,6 +12,7 @@ use Vanilo\Adjustments\Models\Adjustment;
 use Vanilo\Adjustments\Models\AdjustmentTypeProxy;
 use Vanilo\Cart\Models\Cart;
 use Illuminate\Support\Str;
+use Vanilo\Contracts\Buyable;
 
 trait CheckoutItemFunctions
 {
@@ -164,5 +165,21 @@ trait CheckoutItemFunctions
 		if ($this->product->validDirectDiscount()) {
 			$this->adjustments()->create(new DirectDiscount($cart, $this));
 		}
+	}
+
+	/**
+	 * Scope to query items by product (Buyable)
+	 *
+	 * @param Builder $query
+	 * @param Buyable $product
+	 *
+	 * @return Builder
+	 */
+	public function scopeByProduct($query, Buyable $product)
+	{
+		return $query->where([
+			['product_id', '=', $product->getId()],
+			['product_type', '=', $product->morphTypeName()]
+		]);
 	}
 }

@@ -152,20 +152,4 @@ class CartItem extends Model implements CartItemContract, Adjustable
 			$query->hasStock();
 		});
 	}
-
-	/**
-	 * Scope to query items by product (Buyable)
-	 *
-	 * @param Builder $query
-	 * @param Buyable $product
-	 *
-	 * @return Builder
-	 */
-	public function scopeByProduct($query, Buyable $product)
-	{
-		return $query->where([
-			['product_id', '=', $product->getId()],
-			['product_type', '=', $product->morphTypeName()]
-		]);
-	}
 }
