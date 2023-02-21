@@ -124,7 +124,7 @@ trait CheckoutItemFunctions
 
 	public function updateIntervalAdjustments(mixed $adjustable)
 	{
-		if (!$adjustable instanceof Cart || !$adjustable instanceof Order) {
+		if (!$adjustable instanceof Cart && !$adjustable instanceof Order) {
 			throw new Exception(
 				sprintf(
 					'Argument must be an instance of %s or %s, %s given',
