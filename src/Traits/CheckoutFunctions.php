@@ -228,7 +228,10 @@ trait CheckoutFunctions
 
 		$this->updateShippingFee();
 		$this->updateClientCard();
-		$this->resetState();
+
+		if ($this instanceof Cart) {
+			$this->resetState();
+		}
 
 		debug('FINISHED ADJUSTMENT UPDATES');
 	}
