@@ -6,6 +6,8 @@ use App\Classes\Utilities;
 use App\Models\Admin\Card;
 use App\Models\Admin\Coupon;
 use App\Models\Admin\CouponType;
+use App\Models\Admin\Order;
+use App\Models\Admin\OrderCoupon;
 use App\Models\Admin\ShipmentMethod;
 use App\Rules\Coupon\CanBeUsedInZone;
 use App\Rules\Coupon\CanBeUsedWithDiscounts;
@@ -37,6 +39,7 @@ use Vanilo\Adjustments\Adjusters\CouponFreeShipping;
 use Vanilo\Adjustments\Adjusters\CouponPercNum;
 use Vanilo\Cart\Models\CartCoupons;
 use Illuminate\Support\Collection;
+use Vanilo\Cart\Models\Cart;
 
 trait CheckoutFunctions
 {
@@ -51,10 +54,22 @@ trait CheckoutFunctions
 	public Country $selectedCountry;
 	public Card $card;
 
-	public function coupon()
+	public function coupons()
 	{
-		#return $this->hasOne(CartCoupons::class, 'cart_id', 'id');
-		return $this->belongsToMany(Coupon::class, 'cart_coupons')->using(CartCoupons::class);
+		if ($this instanceof Cart) {
+			return $this->belongsToMany(Coupon::class, 'cart_coupons')->using(CartCoupons::class);
+		} else if ($this instanceof Order) {
+			return $this->belongsToMany(Coupon::class, 'orders_coupons')->using(OrderCoupon::class);
+		}
+
+		throw new Exception(
+			sprintf(
+				'Class must be an instance of %s or %s, %s given',
+				Cart::class,
+				Order::class,
+				$this::class
+			)
+		);
 	}
 
 	public function getProductDiscounts()
