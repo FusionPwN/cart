@@ -2,6 +2,7 @@
 
 namespace Vanilo\Cart\Traits;
 
+use App\Models\Admin\Order;
 use Exception;
 use Illuminate\Support\Facades\Cache;
 use Vanilo\Adjustments\Adjusters\DirectDiscount;
@@ -121,8 +122,18 @@ trait CheckoutItemFunctions
 		}
 	}
 
-	public function updateIntervalAdjustments(?Cart $cart = null)
+	public function updateIntervalAdjustments(mixed $adjustable)
 	{
+		if (!$adjustable instanceof Cart || !$adjustable instanceof Order) {
+			throw new Exception(
+				sprintf(
+					'Argument must be an instance of %s or %s',
+					Cart::class,
+					Order::class
+				)
+			);
+		}
+
 		$intervalAdjustment = $this->adjustments()->byType(AdjustmentTypeProxy::INTERVAL_DISCOUNT())->first();
 
 		if (isset($intervalAdjustment)) {
@@ -132,7 +143,7 @@ trait CheckoutItemFunctions
 		$price_interval = $this->product->getInterval($this->quantity());
 
 		if ($price_interval) {
-			$this->adjustments()->create(new DiscountInterval($cart, $this, $price_interval));
+			$this->adjustments()->create(new DiscountInterval($adjustable, $this, $price_interval));
 		}
 	}
 
