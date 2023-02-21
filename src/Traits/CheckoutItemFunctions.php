@@ -127,9 +127,10 @@ trait CheckoutItemFunctions
 		if (!$adjustable instanceof Cart || !$adjustable instanceof Order) {
 			throw new Exception(
 				sprintf(
-					'Argument must be an instance of %s or %s',
+					'Argument must be an instance of %s or %s, %s given',
 					Cart::class,
-					Order::class
+					Order::class,
+					gettype($adjustable)
 				)
 			);
 		}
