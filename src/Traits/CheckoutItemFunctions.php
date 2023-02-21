@@ -130,7 +130,7 @@ trait CheckoutItemFunctions
 					'Argument must be an instance of %s or %s, %s given',
 					Cart::class,
 					Order::class,
-					gettype($adjustable)
+					$adjustable::class
 				)
 			);
 		}
