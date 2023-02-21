@@ -148,8 +148,19 @@ trait CheckoutItemFunctions
 		}
 	}
 
-	public function updateStoreDiscountAdjustments(?Cart $cart = null)
+	public function updateStoreDiscountAdjustments(mixed $adjustable)
 	{
+		if (!$adjustable instanceof Cart && !$adjustable instanceof Order) {
+			throw new Exception(
+				sprintf(
+					'Argument must be an instance of %s or %s, %s given',
+					Cart::class,
+					Order::class,
+					$adjustable::class
+				)
+			);
+		}
+
 		$store_discount = (float) Cache::get('settings.store_discount');
 		$storeAdjustment = $this->adjustments()->byType(AdjustmentTypeProxy::STORE_DISCOUNT())->first();
 
@@ -161,13 +172,24 @@ trait CheckoutItemFunctions
 			if (Cache::get('settings.campaign_ignore_store_discount') == 1 && count($this->product->discountTree) > 0) {
 				# NAO APLICA DESCONTO LOJA PQ TEM CAPANHAS
 			} else {
-				$this->adjustments()->create(new DiscountStore($cart, $this, $store_discount));
+				$this->adjustments()->create(new DiscountStore($adjustable, $this, $store_discount));
 			}
 		}
 	}
 
-	public function updateDirectDiscountAdjustments(?Cart $cart = null)
+	public function updateDirectDiscountAdjustments(mixed $adjustable)
 	{
+		if (!$adjustable instanceof Cart && !$adjustable instanceof Order) {
+			throw new Exception(
+				sprintf(
+					'Argument must be an instance of %s or %s, %s given',
+					Cart::class,
+					Order::class,
+					$adjustable::class
+				)
+			);
+		}
+
 		$directAdjustment = $this->adjustments()->byType(AdjustmentTypeProxy::DIRECT_DISCOUNT())->first();
 
 		if (isset($directAdjustment)) {
@@ -175,7 +197,7 @@ trait CheckoutItemFunctions
 		}
 
 		if ($this->product->validDirectDiscount()) {
-			$this->adjustments()->create(new DirectDiscount($cart, $this));
+			$this->adjustments()->create(new DirectDiscount($adjustable, $this));
 		}
 	}
 
