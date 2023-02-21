@@ -215,14 +215,14 @@ trait CheckoutFunctions
 			$item->updateStoreDiscountAdjustments($this);
 		}
 
-		if ($this->coupon->first()) {
-			$this->validateCoupon($this->coupon->first());
+		if ($this->coupons->first()) {
+			$this->validateCoupon($this->coupons->first());
 
 			if ($this->validator->fails()) {
 				$this->activeCoupon = null;
 			} else {
-				$this->activeCoupon = $this->coupon->first();
-				$this->updateCouponAdjustments($this->coupon->first());
+				$this->activeCoupon = $this->coupons->first();
+				$this->updateCouponAdjustments($this->coupons->first());
 			}
 		}
 
@@ -486,7 +486,7 @@ trait CheckoutFunctions
 	 */
 	public function applyCoupon(Coupon $coupon)
 	{
-		$this->coupon()->attach($coupon);
+		$this->coupons()->attach($coupon);
 	}
 
 	public function updateCouponAdjustments(Coupon $coupon)
@@ -510,8 +510,8 @@ trait CheckoutFunctions
 	public function removeCoupon()
 	{
 		$this->removeCouponAdjustments();
-		if (count($this->coupon) > 0) {
-			$this->coupon()->sync([]);
+		if (count($this->coupons) > 0) {
+			$this->coupons()->sync([]);
 		}
 	}
 
