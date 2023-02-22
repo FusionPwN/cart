@@ -17,6 +17,8 @@ use Vanilo\Contracts\Buyable;
 
 trait CheckoutItemFunctions
 {
+	public Object $prices;
+	
 	public function itemsTotal(): float
 	{
 		return (float) ($this->getAdjustedPrice() * $this->quantity());
@@ -62,6 +64,7 @@ trait CheckoutItemFunctions
 	public function getAdjustedPrice(): float
 	{
 		$price = $this->product->getPriceVat();
+		dd($price);
 		$adjustments = $this->adjustments()->getIterator();
 
 		if (isset($adjustments)) {

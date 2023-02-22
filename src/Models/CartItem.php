@@ -36,8 +36,6 @@ class CartItem extends Model implements CartItemContract, Adjustable
 
 	protected $guarded = ['id', 'created_at', 'updated_at'];
 
-	public Object $prices;
-
 	public static function boot()
 	{
 		parent::boot();
