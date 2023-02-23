@@ -135,14 +135,6 @@ class Cart extends Model implements CartContract, Adjustable
 	}
 
 	/**
-	 * @inheritDoc
-	 */
-	public function itemCount()
-	{
-		return $this->items->sum('quantity');
-	}
-
-	/**
 	 * Returns a specific item from cart
 	 * 
 	 * @param $id (product id)
