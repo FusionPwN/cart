@@ -21,9 +21,17 @@ trait CheckoutItemFunctions
 
 	public function total(): float
 	{
-		return (float) $this->itemsTotal();
+		if ($this instanceof Order) {
+			if ($this->order->isEditable()) {
+				return (float) $this->itemsTotal();
+			} else {
+				return $this->price * $this->quantity;
+			}
+		} else if ($this instanceof Cart) {
+			return (float) $this->itemsTotal();
+		}
 	}
-	
+
 	public function itemsTotal(): float
 	{
 		return (float) ($this->getAdjustedPrice() * $this->quantity());
