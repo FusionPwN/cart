@@ -373,7 +373,8 @@ trait CheckoutFunctions
 
 		if (null === $freeShippingAdjustmentCoupon) {
 			foreach ($this->items as $item) {
-				if ($freeShippingAdjustmentCoupon = $item->getAdjustmentByType(AdjustmentTypeProxy::COUPON_FREE_SHIPPING())) {
+				$freeShippingAdjustmentCoupon = $item->getAdjustmentByType(AdjustmentTypeProxy::COUPON_FREE_SHIPPING());
+				if ($freeShippingAdjustmentCoupon instanceof Adjustment) {
 					break;
 				}
 			}
