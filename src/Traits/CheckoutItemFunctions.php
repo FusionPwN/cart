@@ -19,6 +19,11 @@ trait CheckoutItemFunctions
 {
 	public Object $prices;
 
+	public function total(): float
+	{
+		return (float) $this->itemsTotal();
+	}
+	
 	public function itemsTotal(): float
 	{
 		return (float) ($this->getAdjustedPrice() * $this->quantity());
