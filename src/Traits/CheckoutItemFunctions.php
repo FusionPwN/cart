@@ -3,6 +3,7 @@
 namespace Vanilo\Cart\Traits;
 
 use App\Models\Admin\Order;
+use App\Models\Admin\OrderItem;
 use Exception;
 use Illuminate\Support\Facades\Cache;
 use Vanilo\Adjustments\Adjusters\DirectDiscount;
@@ -13,6 +14,7 @@ use Vanilo\Adjustments\Models\Adjustment;
 use Vanilo\Adjustments\Models\AdjustmentTypeProxy;
 use Vanilo\Cart\Models\Cart;
 use Illuminate\Support\Str;
+use Vanilo\Cart\Models\CartItem;
 use Vanilo\Contracts\Buyable;
 
 trait CheckoutItemFunctions
@@ -21,13 +23,13 @@ trait CheckoutItemFunctions
 
 	public function total(): float
 	{
-		if ($this instanceof Order) {
+		if ($this instanceof OrderItem) {
 			if ($this->order->isEditable()) {
 				return (float) $this->itemsTotal();
 			} else {
 				return $this->price * $this->quantity;
 			}
-		} else if ($this instanceof Cart) {
+		} else if ($this instanceof CartItem) {
 			return (float) $this->itemsTotal();
 		}
 	}
