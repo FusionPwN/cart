@@ -293,19 +293,6 @@ class Cart extends Model implements CartContract, Adjustable
 		$this->conflictingDiscounts = $this->getConflictingDiscounts();
 	}
 
-	public function total(): float
-	{
-		$total = $this->itemsTotal() + $this->adjustments()->total();
-
-		$clientCardAdjustment = $this->adjustments()->byType(AdjustmentTypeProxy::CLIENT_CARD())->first();
-
-		if (isset($clientCardAdjustment)) {
-			$total += abs(floatval($clientCardAdjustment->amount));
-		}
-
-		return $total;
-	}
-
 	public function totalWithCard(): float
 	{
 		return $this->itemsTotal() + $this->adjustments()->total();
@@ -321,14 +308,6 @@ class Cart extends Model implements CartContract, Adjustable
 		return $this->items->sum(function ($item) {
 			return $item->vatTotal();
 		});
-	}
-
-	/**
-	 * @inheritDoc
-	 */
-	public function subTotal(): float
-	{
-		return $this->total() - $this->shipping();
 	}
 
 	public function weight(): float

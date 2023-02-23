@@ -570,14 +570,49 @@ trait CheckoutFunctions
 	{
 		if ($this instanceof Order) {
 			if ($this->isEditable()) {
-				$shippingAdjustment = $this->getShippingAdjustment();
-				return isset($shippingAdjustment) ? $shippingAdjustment->getAmount() : 0;
+				return $this->shippingValue();
 			} else {
 				return (float) $this->shipping_price;
 			}
 		} else if ($this instanceof Cart) {
-			$shippingAdjustment = $this->getShippingAdjustment();
-			return isset($shippingAdjustment) ? $shippingAdjustment->getAmount() : 0;
+			return $this->shippingValue();
 		}
-	}	
+	}
+
+	protected function shippingValue(): float
+	{
+		$shippingAdjustment = $this->getShippingAdjustment();
+		return isset($shippingAdjustment) ? $shippingAdjustment->getAmount() : 0;
+	}
+
+	public function total(): float
+	{
+		if ($this instanceof Order) {
+			if ($this->isEditable()) {
+				return $this->totalValue();
+			} else {
+				return (float) $this->total;
+			}
+		} else if ($this instanceof Cart) {
+			return $this->totalValue();
+		}
+	}
+
+	protected function totalValue(): float
+	{
+		$total = $this->itemsTotal() + $this->adjustments()->total();
+
+		$clientCardAdjustment = $this->adjustments()->byType(AdjustmentTypeProxy::CLIENT_CARD())->first();
+
+		if (isset($clientCardAdjustment)) {
+			$total += abs(floatval($clientCardAdjustment->amount));
+		}
+
+		return $total;
+	}
+
+	public function subTotal()
+	{
+		return $this->total() - $this->shipping();
+	}
 }
