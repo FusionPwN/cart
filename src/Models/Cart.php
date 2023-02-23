@@ -328,15 +328,7 @@ class Cart extends Model implements CartContract, Adjustable
 	 */
 	public function subTotal(): float
 	{
-		/* return (float) $this->items->sum(function ($item) {
-			return (float) $item->product->price_vat * $item->quantity;
-		}); */
-
-		$subtotal = $this->total();
-		$shippingAdjustment = $this->getShippingAdjustment();
-		$subtotal -= isset($shippingAdjustment) ? $shippingAdjustment->getAmount() : 0;
-
-		return $subtotal;
+		return $this->total() - $this->shipping();
 	}
 
 	public function weight(): float

@@ -565,4 +565,19 @@ trait CheckoutFunctions
 	{
 		return isset($this->activeCoupon) ? $this->activeCoupon : null;
 	}
+
+	public function shipping(): float
+	{
+		if ($this instanceof Order) {
+			if ($this->isEditable()) {
+				$shippingAdjustment = $this->getShippingAdjustment();
+				return isset($shippingAdjustment) ? $shippingAdjustment->getAmount() : 0;
+			} else {
+				return (float) $this->shipping_price;
+			}
+		} else if ($this instanceof Cart) {
+			$shippingAdjustment = $this->getShippingAdjustment();
+			return isset($shippingAdjustment) ? $shippingAdjustment->getAmount() : 0;
+		}
+	}	
 }
