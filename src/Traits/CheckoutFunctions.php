@@ -615,4 +615,12 @@ trait CheckoutFunctions
 	{
 		return $this->total() - $this->shipping();
 	}
+
+	/**
+	 * @inheritDoc
+	 */
+	public function itemCount()
+	{
+		return $this->items->sum('quantity');
+	}
 }

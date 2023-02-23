@@ -233,12 +233,4 @@ trait CheckoutItemFunctions
 			['product_type', '=', $product->morphTypeName()]
 		]);
 	}
-
-	/**
-	 * @inheritDoc
-	 */
-	public function itemCount()
-	{
-		return $this->items->sum('quantity');
-	}
 }
