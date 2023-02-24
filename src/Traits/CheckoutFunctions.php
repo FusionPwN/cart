@@ -318,10 +318,12 @@ trait CheckoutFunctions
 			return false;
 		}
 
+
 		$price = $this->shipping->price ?? 0;
 		$threshold = null;
 
 		if ($this->shipping->usesWeight()) {
+
 			$shippingZone = $this->shipping->whereHasZonesAndCountry($this->selectedCountry)->first()->zones->first();
 
 			if (!isset($shippingZone) || !isset($shippingZone->pivot)) {
@@ -334,7 +336,7 @@ trait CheckoutFunctions
 				throw new Exception('Shipping method uses weights but no weight was found');
 			}
 
-			if ((!isset($shippingZone->pivot->max_weight) || $shippingZone->pivot->max_weight == 0 || $this->weight() < $shippingZone->pivot->max_weight) && !$this->itemsPreventFreeShipping()) {
+			if ((!isset($shippingZone->pivot->max_weight) || $shippingZone->pivot->max_weight == 0 || $this->weight() < $shippingZone->pivot->max_weight) && !$this->itemsPreventFreeShipping() && $shippingZone->pivot->shipping_offer == 1) {
 				$threshold = $shippingZone->pivot->min_value ?? null;
 			}
 
