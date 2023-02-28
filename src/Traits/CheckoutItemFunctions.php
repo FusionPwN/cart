@@ -246,4 +246,12 @@ trait CheckoutItemFunctions
 	{
 		return $this->product;
 	}
+
+	/**
+	 * @inheritDoc
+	 */
+	public function getQuantity(): int
+	{
+		return (int) $this->quantity();
+	}
 }

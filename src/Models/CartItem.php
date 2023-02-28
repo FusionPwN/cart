@@ -73,14 +73,6 @@ class CartItem extends Model implements CartItemContract, Adjustable
 	}
 
 	/**
-	 * @inheritDoc
-	 */
-	public function getQuantity(): int
-	{
-		return (int) $this->quantity();
-	}
-
-	/**
 	 * Property accessor alias to the total() method
 	 *
 	 * @return float
