@@ -259,6 +259,18 @@ trait CheckoutFunctions
 		return $this->items->sum('total');
 	}
 
+	public function vatTotal(): float
+	{
+		return $this->itemsVatTotal();
+	}
+
+	public function itemsVatTotal(): float
+	{
+		return $this->items->sum(function ($item) {
+			return $item->vatTotal();
+		});
+	}
+
 	public function removeAdjustment(Adjustment $adjustment = null, AdjustmentType $type = null)
 	{
 		if (isset($type)) {

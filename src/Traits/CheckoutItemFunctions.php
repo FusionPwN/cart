@@ -65,6 +65,11 @@ trait CheckoutItemFunctions
 		return (int) $this->quantity - $adj_quantity;
 	}
 
+	public function vatTotal(): float
+	{
+		return (float) $this->itemVatTotal();
+	}
+
 	public function itemVatTotal(): float
 	{
 		# PVP - (PVP / (1 + (IVA / 100)))

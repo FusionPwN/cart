@@ -290,18 +290,6 @@ class Cart extends Model implements CartContract, Adjustable
 		return $this->itemsTotal() + $this->adjustments()->total();
 	}
 
-	public function vatTotal(): float
-	{
-		return $this->itemsVatTotal();
-	}
-
-	public function itemsVatTotal(): float
-	{
-		return $this->items->sum(function ($item) {
-			return $item->vatTotal();
-		});
-	}
-
 	public function weight(): float
 	{
 		return (float) $this->items->sum(function ($item) {

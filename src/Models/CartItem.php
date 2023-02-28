@@ -56,11 +56,6 @@ class CartItem extends Model implements CartItemContract, Adjustable
 		$this->prices = $this->formattedPrice();
 	}
 
-	public function vatTotal(): float
-	{
-		return (float) $this->itemVatTotal();
-	}
-
 	public function weight(): float
 	{
 		return (float) $this->product->net_weight * $this->quantity();
