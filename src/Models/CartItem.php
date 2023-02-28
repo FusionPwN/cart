@@ -75,14 +75,6 @@ class CartItem extends Model implements CartItemContract, Adjustable
 	/**
 	 * @inheritDoc
 	 */
-	public function getBuyable(): Buyable
-	{
-		return $this->product;
-	}
-
-	/**
-	 * @inheritDoc
-	 */
 	public function getQuantity(): int
 	{
 		return (int) $this->quantity();

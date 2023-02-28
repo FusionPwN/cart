@@ -238,4 +238,12 @@ trait CheckoutItemFunctions
 			['product_type', '=', $product->morphTypeName()]
 		]);
 	}
+
+	/**
+	 * @inheritDoc
+	 */
+	public function getBuyable(): Buyable
+	{
+		return $this->product;
+	}
 }
