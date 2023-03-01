@@ -286,14 +286,15 @@ trait CheckoutFunctions
 		}
 	}
 
-	public function removeAllAdjustments()
+	public function removeAllAdjustments($removeFromItems = false)
 	{
 		$this->adjustments()->relation()->delete();
-		/* $adjustments = $this->adjustments()->getIterator();
 
-		foreach ($adjustments as $adjustment) {
-			$this->removeAdjustment($adjustment);
-		} */
+		if ($removeFromItems) {
+			foreach ($this->items as $item) {
+				$item->removeAllAdjustments();
+			}
+		}
 	}
 
 	public function setShipping(ShipmentMethod $shipping)

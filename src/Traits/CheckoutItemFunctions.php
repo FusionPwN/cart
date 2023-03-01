@@ -137,11 +137,7 @@ trait CheckoutItemFunctions
 
 	public function removeAllAdjustments()
 	{
-		$adjustments = $this->adjustments()->getIterator();
-
-		foreach ($adjustments as $adjustment) {
-			$this->removeAdjustment($adjustment);
-		}
+		$this->adjustments()->relation()->delete();
 	}
 
 	public function updateIntervalAdjustments(mixed $adjustable)
