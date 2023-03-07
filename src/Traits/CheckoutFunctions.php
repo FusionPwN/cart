@@ -90,7 +90,7 @@ trait CheckoutFunctions
 						array_push($discounts[$p_discount->id]['cart_items'], $item);
 					}
 
-					break; # NAO PERMITIR QUE MAIS DO QUE UMA CAMPANHA SEJA ASSOCIADA AO PRODUTO
+					break; # NAO PERMITIR QUE MAIS DO QUE UMA CAMPANHA SEJA APLICADA AO PRODUTO
 				}
 			}
 		}
