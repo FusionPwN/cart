@@ -135,48 +135,6 @@ class Cart extends Model implements CartContract, Adjustable
 	}
 
 	/**
-	 * Returns a specific item from cart
-	 * 
-	 * @param $id (product id)
-	 * 
-	 * @return CartItem
-	 */
-	public function getItem($id): ?CartItem
-	{
-		return $this->items->where('product.id', $id)->first();
-	}
-
-	/**
-	 * Checks if item exists in cart
-	 * 
-	 * @param $id (product id)
-	 * 
-	 * @return bool
-	 */
-	public function hasItem($id): bool
-	{
-		return (bool) count($this->items->where('product.id', $id)) > 0;
-	}
-
-	/**
-	 * Checks if items exists in cart
-	 * 
-	 * @param $ids (product id)
-	 * 
-	 * @return bool
-	 */
-	public function hasItems($ids): bool
-	{
-		foreach ($ids as $id) {
-			if ($this->hasItem($id)) {
-				return true;
-			}
-		}
-
-		return false;
-	}
-
-	/**
 	 * @inheritDoc
 	 */
 	public function addItem(Buyable $product, $qty = 1, $params = [])

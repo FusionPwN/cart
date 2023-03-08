@@ -72,6 +72,48 @@ trait CheckoutFunctions
 		);
 	}
 
+
+	/**
+	 * Returns a specific item from cart
+	 * 
+	 * @param $id (product id)
+	 * 
+	 */
+	public function getItem($id)
+	{
+		return $this->items->where('product.id', $id)->first();
+	}
+
+	/**
+	 * Checks if item exists in cart
+	 * 
+	 * @param $id (product id)
+	 * 
+	 * @return bool
+	 */
+	public function hasItem($id): bool
+	{
+		return (bool) count($this->items->where('product.id', $id)) > 0;
+	}
+
+	/**
+	 * Checks if items exists in cart
+	 * 
+	 * @param $ids (product id)
+	 * 
+	 * @return bool
+	 */
+	public function hasItems($ids): bool
+	{
+		foreach ($ids as $id) {
+			if ($this->hasItem($id)) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
 	public function getProductDiscounts()
 	{
 		$discounts = [];
