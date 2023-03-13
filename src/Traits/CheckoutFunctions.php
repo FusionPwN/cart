@@ -375,7 +375,6 @@ trait CheckoutFunctions
 			return false;
 		}
 
-
 		$price = $this->shipping->price ?? 0;
 		$threshold = null;
 
