@@ -254,4 +254,13 @@ trait CheckoutItemFunctions
 	{
 		return (int) $this->quantity();
 	}
+
+	/**
+	 * @inheritDoc
+	 */
+	public function setQuantity(int $value = 1)
+	{
+		$this->quantity = $value;
+		$this->save();
+	}
 }
