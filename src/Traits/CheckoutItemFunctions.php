@@ -83,7 +83,12 @@ trait CheckoutItemFunctions
 	 */
 	public function getAdjustedPrice(): float
 	{
-		$price = $this->product->getPriceVat();
+		if ($this instanceof OrderItem) {
+			$price = $this->mod_price != 0 ? $this->mod_price : $this->product->getPriceVat();
+		} else {
+			$price = $this->product->getPriceVat();
+		}
+
 		$adjustments = $this->adjustments()->getIterator();
 
 		if (isset($adjustments)) {

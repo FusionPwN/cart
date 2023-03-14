@@ -223,42 +223,54 @@ trait CheckoutFunctions
 
 		foreach ($this->items as $item) {
 			$item->removeAllAdjustments();
-			$item->updateIntervalAdjustments($this);
-			$item->updateDirectDiscountAdjustments($this);
+
+			if ($this instanceof Order && $item->overridesPrice()) {
+				#keep empty
+			} else {
+				$item->updateIntervalAdjustments($this);
+				$item->updateDirectDiscountAdjustments($this);
+			}
 		}
+
 
 		foreach ($this->applyableDiscounts as $discount) {
 			$discount_data = $discount['discount_data'];
 
 			foreach ($discount['cart_items'] as $item) {
-				if ($discount['tag'] == 'desconto_perc_euro') {
-					$item->adjustments()->create(new DiscountPercNum($this, $item, $discount_data));
-				} else if ($discount['tag'] == 'oferta_barato') {
-					$adjustment = $item->adjustments()->create(new DiscountLeastExpensiveFree($this, $item, $discount_data));
+				if ($this instanceof Order && $item->overridesPrice()) {
+				} else {
+					if ($discount['tag'] == 'desconto_perc_euro') {
+						$item->adjustments()->create(new DiscountPercNum($this, $item, $discount_data));
+					} else if ($discount['tag'] == 'oferta_barato') {
+						$adjustment = $item->adjustments()->create(new DiscountLeastExpensiveFree($this, $item, $discount_data));
 
-					if ($adjustment->getData('remainder_quantity')) {
-						if ($adjustment->getData('remainder_quantity') == 0) {
-							break;
+						if ($adjustment->getData('remainder_quantity')) {
+							if ($adjustment->getData('remainder_quantity') == 0) {
+								break;
+							} else {
+								$discount_data['remainder_quantity'] = $adjustment->getData('remainder_quantity');
+							}
 						} else {
-							$discount_data['remainder_quantity'] = $adjustment->getData('remainder_quantity');
+							break; # break pq este desconto só vai ser aplicado 1x
 						}
-					} else {
+					} else if ($discount['tag'] == 'oferta_prod_igual') {
+						$item->adjustments()->create(new DiscountSameFree($this, $item, $discount_data));
+					} else if ($discount['tag'] == 'oferta_prod') {
+						$item->adjustments()->create(new DiscountFree($this, $discount_data));
+						break; # break pq este desconto só vai ser aplicado 1x
+					} else if ($discount['tag'] == 'oferta_percentagem') {
+						$item->adjustments()->create(new DiscountScalablePercNum($this, $discount_data));
 						break; # break pq este desconto só vai ser aplicado 1x
 					}
-				} else if ($discount['tag'] == 'oferta_prod_igual') {
-					$item->adjustments()->create(new DiscountSameFree($this, $item, $discount_data));
-				} else if ($discount['tag'] == 'oferta_prod') {
-					$item->adjustments()->create(new DiscountFree($this, $discount_data));
-					break; # break pq este desconto só vai ser aplicado 1x
-				} else if ($discount['tag'] == 'oferta_percentagem') {
-					$item->adjustments()->create(new DiscountScalablePercNum($this, $discount_data));
-					break; # break pq este desconto só vai ser aplicado 1x
 				}
 			}
 		}
 
 		foreach ($this->items as $item) {
-			$item->updateStoreDiscountAdjustments($this);
+			if ($this instanceof Order && $item->overridesPrice()) {
+			} else {
+				$item->updateStoreDiscountAdjustments($this);
+			}
 		}
 
 		if ($this->coupons->first()) {
@@ -376,6 +388,7 @@ trait CheckoutFunctions
 		if (!isset($this->shipping) || !isset($this->selectedCountry)) {
 			return false;
 		}
+
 
 		$price = $this->shipping->price ?? 0;
 		$threshold = null;
