@@ -271,6 +271,8 @@ trait CheckoutFunctions
 			}
 		}
 
+		$this->updateShippingFee();
+
 		if ($this->coupons->first()) {
 			$this->validateCoupon($this->coupons->first());
 
@@ -281,8 +283,7 @@ trait CheckoutFunctions
 				$this->updateCouponAdjustments($this->coupons->first());
 			}
 		}
-
-		$this->updateShippingFee();
+		
 		$this->updateClientCard();
 
 		if ($this instanceof Cart) {
