@@ -152,36 +152,27 @@ trait CheckoutFunctions
 			$discount_tag = $discount_data->get_tipo_nome->tag;
 			$discount['tag'] = $discount_tag;
 
-			switch ($discount_tag) {
-				case 'desconto_perc_euro':
-					$applyableDiscounts[$discount_data->id] = $discount;
-					break;
-				case 'oferta_barato':
-					if ($cart_items->sum('quantity') >= $discount_data->purchase_number && (!isset($discount_data->minimum_value) || (isset($discount_data->minimum_value) && $cart_items->sum('price_vat') >= $discount_data->minimum_value))) {
-						# ordenar produtos por preco
-						$discount['cart_items'] = $discount['cart_items']->sortBy('price_vat');
+			if ($discount_data->isApplyable($cart_items)) {
+				switch ($discount_tag) {
+					case 'desconto_perc_euro':
+						break;
+					case 'oferta_barato':
+						$discount['cart_items'] = $discount['cart_items']->sortBy('prices.price_unit');
 
-						$applyableDiscounts[$discount_data->id] = $discount;
-					}
-					break;
-				case 'oferta_prod_igual':
-					$applyableDiscounts[$discount_data->id] = $discount;
-					break;
-				case 'oferta_prod':
-					if ($cart_items->sum('quantity') >= $discount_data->purchase_number) {
-						$applyableDiscounts[$discount_data->id] = $discount;
-					}
-					break;
-				case 'oferta_percentagem':
-					# não está completamente implementado
-					if ($cart_items->sum('quantity') >= $discount_data->num_min_buy) {
-						$discount['cart_items'] = $discount['cart_items']->sortBy('price_vat');
+						break;
+					case 'oferta_prod_igual':
+						break;
+					case 'oferta_prod':
+						break;
+					case 'oferta_percentagem':
+						$discount['cart_items'] = $discount['cart_items']->sortByDesc('prices.price_unit')->values(); # values()->all() para fazer reset nas keys do array
 
-						$applyableDiscounts[$discount_data->id] = $discount;
-					}
-					break;
-				case 'oferta_desc_carrinho':
-					break;
+						break;
+					case 'oferta_desc_carrinho':
+						break;
+				}
+
+				$applyableDiscounts[$discount_data->id] = $discount;
 			}
 		}
 
@@ -230,9 +221,10 @@ trait CheckoutFunctions
 			}
 		}
 
-
 		foreach ($this->applyableDiscounts as $discount) {
 			$discount_data = $discount['discount_data'];
+			$level = 0;
+			$count = 0;
 
 			foreach ($discount['cart_items'] as $item) {
 				if ($this instanceof Order && $item->overridesPrice()) {
@@ -257,8 +249,22 @@ trait CheckoutFunctions
 						$item->adjustments()->create(new DiscountFree($this, $discount_data));
 						break; # break pq este desconto só vai ser aplicado 1x
 					} else if ($discount['tag'] == 'oferta_percentagem') {
-						$item->adjustments()->create(new DiscountScalablePercNum($this, $discount_data));
-						break; # break pq este desconto só vai ser aplicado 1x
+						$count++;
+
+						if ($discount_data->properties->highest == 1 && $level > count($discount_data->properties->levels) - 1) {
+							$level = count($discount_data->properties->levels) - 1;
+						}
+
+						$item->adjustments()->create(new DiscountScalablePercNum($this, $item, $discount_data, $level));
+
+						if ($discount_data->properties->highest == 0) {
+							if (round(count($discount['cart_items']) / count($discount_data->properties->levels)) == $count) {
+								$count = 0;
+								$level++;
+							}
+						} else {
+							$level++;
+						}
 					}
 				}
 			}
@@ -283,7 +289,7 @@ trait CheckoutFunctions
 				$this->updateCouponAdjustments($this->coupons->first());
 			}
 		}
-		
+
 		$this->updateClientCard();
 
 		if ($this instanceof Cart) {
@@ -474,7 +480,7 @@ trait CheckoutFunctions
 
 	public function removeCouponAdjustments()
 	{
-		foreach (AdjustmentTypeProxy::COUPONS()->value() as $value) {
+		foreach (AdjustmentTypeProxy::CouponChoices(keys_only: true) as $value) {
 			$const = Str::upper($value);
 			$this->removeAdjustment(null, AdjustmentTypeProxy::$const());
 
