@@ -251,9 +251,9 @@ trait CheckoutFunctions
 					} else if ($discount['tag'] == 'oferta_percentagem') {
 						$count++;
 
-						if ($discount_data->properties->highest == 1 && $level > count($discount_data->properties->levels) - 1) {
-							$level = count($discount_data->properties->levels) - 1;
-						}
+						if ($discount_data->properties->highest == 1) {
+							$level = count($discount['cart_items']) - 1;
+						} 
 
 						$item->adjustments()->create(new DiscountScalablePercNum($this, $item, $discount_data, $level));
 
@@ -262,8 +262,6 @@ trait CheckoutFunctions
 								$count = 0;
 								$level++;
 							}
-						} else {
-							$level++;
 						}
 					}
 				}
