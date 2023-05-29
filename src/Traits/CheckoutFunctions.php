@@ -257,11 +257,9 @@ trait CheckoutFunctions
 
 						$item->adjustments()->create(new DiscountScalablePercNum($this, $item, $discount_data, $level));
 
-						if ($discount_data->properties->highest == 0) {
-							if (round(count($discount['cart_items']) / count($discount_data->properties->levels)) == $count) {
-								$count = 0;
-								$level++;
-							}
+						if ($discount_data->properties->highest == 0 && round(count($discount['cart_items']) / count($discount_data->properties->levels)) == $count) {
+							$count = 0;
+							$level++;
 						}
 					}
 				}
