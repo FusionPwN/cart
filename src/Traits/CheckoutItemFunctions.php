@@ -52,6 +52,8 @@ trait CheckoutItemFunctions
 		return (float) $adj_total;
 	}
 
+	
+
 	public function quantity(): int
 	{
 		$adj_quantity = 0;
@@ -267,5 +269,15 @@ trait CheckoutItemFunctions
 	{
 		$this->quantity = $value;
 		$this->save();
+	}
+
+	/**
+	 * Property accessor alias to the getAdjustedPrice() method
+	 *
+	 * @return float
+	 */
+	public function getAdjustedPriceAttribute()
+	{
+		return $this->getAdjustedPrice();
 	}
 }

@@ -36,7 +36,8 @@ use Vanilo\Adjustments\Models\Adjustment;
 use Vanilo\Adjustments\Models\AdjustmentTypeProxy;
 use Illuminate\Support\Str;
 use Vanilo\Adjustments\Adjusters\CouponFreeShipping;
-use Vanilo\Adjustments\Adjusters\CouponPercNum;
+use Vanilo\Adjustments\Adjusters\CouponPerc;
+use Vanilo\Adjustments\Adjusters\CouponNum;
 use Vanilo\Cart\Models\CartCoupons;
 use Illuminate\Support\Collection;
 use Vanilo\Cart\Models\Cart;
@@ -574,8 +575,10 @@ trait CheckoutFunctions
 
 		foreach ($this->items as $item) {
 			if (!isset($validProducts) || (isset($validProducts) && $validProducts->contains('product_id', $item->product_id))) {
-				if ($coupon->type == CouponType::PERCENTAGE()->value() || $coupon->type == CouponType::NUMERARY()->value()) {
-					$item->adjustments()->create(new CouponPercNum($this, $item, $coupon));
+				if ($coupon->type == CouponType::PERCENTAGE()->value()) {
+					$item->adjustments()->create(new CouponPerc($this, $item, $coupon));
+				} else if ($coupon->type == CouponType::NUMERARY()->value()) {
+					$item->adjustments()->create(new CouponNum($this, $item, $coupon));
 				} else if ($coupon->type == CouponType::FREESHIPPING()->value()) {
 					$this->adjustments()->create(new CouponFreeShipping($this, $coupon));
 					break;
