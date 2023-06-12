@@ -52,7 +52,7 @@ trait CheckoutItemFunctions
 		return (float) $adj_total;
 	}
 
-	
+
 
 	public function quantity(): int
 	{
@@ -83,7 +83,7 @@ trait CheckoutItemFunctions
 	 *
 	 * @return float
 	 */
-	public function getAdjustedPrice(): float
+	public function getAdjustedPrice(array $excludes = []): float
 	{
 		if ($this instanceof OrderItem) {
 			$price = $this->mod_price != 0 ? $this->mod_price : $this->product->getPriceVat();
@@ -95,7 +95,7 @@ trait CheckoutItemFunctions
 
 		if (isset($adjustments)) {
 			foreach ($adjustments as $adjustment) {
-				if (!AdjustmentTypeProxy::IsVisualSeparator($adjustment->type)) {
+				if (!AdjustmentTypeProxy::IsVisualSeparator($adjustment->type) && !in_array($adjustment->type, $excludes)) {
 					$price -= (float) $adjustment->getData('single_amount');
 				}
 			}
