@@ -230,6 +230,10 @@ trait CheckoutFunctions
 			foreach ($discount['cart_items'] as $item) {
 				if ($this instanceof Order && $item->overridesPrice()) {
 				} else {
+					if ($item->product->validDirectDiscount() && !$item->product->directDiscountStacksWithDiscounts()) {
+						continue;
+					}
+
 					if ($discount['tag'] == 'desconto_perc_euro') {
 						$item->adjustments()->create(new DiscountPercNum($this, $item, $discount_data));
 					} else if ($discount['tag'] == 'oferta_barato') {
