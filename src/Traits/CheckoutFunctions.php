@@ -40,6 +40,8 @@ use Vanilo\Adjustments\Adjusters\CouponPerc;
 use Vanilo\Adjustments\Adjusters\CouponNum;
 use Vanilo\Cart\Models\CartCoupons;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Cache;
+use Vanilo\Adjustments\Adjusters\FeePackagingBag;
 use Vanilo\Cart\Models\Cart;
 
 trait CheckoutFunctions
@@ -279,6 +281,7 @@ trait CheckoutFunctions
 		}
 
 		$this->updateShippingFee();
+		$this->updateFeePackagingBag();
 
 		if ($this->coupons->first()) {
 			$this->validateCoupon($this->coupons->first());
@@ -445,6 +448,18 @@ trait CheckoutFunctions
 		return $clientCardAdjustment;
 	}
 
+	public function updateFeePackagingBag()
+	{
+		if(Cache::get('settings.checkout_packaging_of_the_order') !== null && Cache::get('settings.checkout_packaging_of_the_order') != "") {
+			$this->removeAdjustment(null, AdjustmentTypeProxy::FEE_PACKAGING_BAG());
+			$feePackagingBagAdjustment = $this->adjustments()->create(new FeePackagingBag(Cache::get('settings.checkout_packaging_of_the_order')));
+
+			return $feePackagingBagAdjustment;
+		}
+
+		return false;
+	}
+
 	public function getShippingAdjustment(): ?Adjustment
 	{
 		$shippingAdjustment = $this->getAdjustmentByType(AdjustmentTypeProxy::SHIPPING());
@@ -477,6 +492,17 @@ trait CheckoutFunctions
 		}
 
 		return $clientCardAdjustment;
+	}
+
+	public function getFeePackagingBagAdjustment(): ?Adjustment
+	{
+		$feePackagingBagAdjustment = $this->getAdjustmentByType(AdjustmentTypeProxy::FEE_PACKAGING_BAG());
+
+		if (null !== $feePackagingBagAdjustment) {
+			$feePackagingBagAdjustment->display_amount = $feePackagingBagAdjustment->getAmount();
+		}
+
+		return $feePackagingBagAdjustment;
 	}
 
 	public function removeCouponAdjustments()
@@ -660,10 +686,29 @@ trait CheckoutFunctions
 		}
 	}
 
+	public function feePackagingBag(): float
+	{
+		if ($this instanceof Order) {
+			if ($this->isEditable()) {
+				return $this->feePackagingBagValue();
+			} else {
+				return (float) isset($this->getFeePackagingBag->value) ? $this->getFeePackagingBag->value : 0;
+			}
+		} else if ($this instanceof Cart) {
+			return $this->feePackagingBagValue();
+		}
+	}
+
 	protected function shippingValue(): float
 	{
 		$shippingAdjustment = $this->getShippingAdjustment();
 		return isset($shippingAdjustment) ? $shippingAdjustment->getAmount() : 0;
+	}
+
+	protected function feePackagingBagValue(): float
+	{
+		$feePackagingBagAdjustment = $this->getFeePackagingBagAdjustment();
+		return isset($feePackagingBagAdjustment) ? $feePackagingBagAdjustment->getAmount() : 0;
 	}
 
 	public function total(): float
@@ -694,7 +739,7 @@ trait CheckoutFunctions
 
 	public function subTotal()
 	{
-		return $this->total() - $this->shipping();
+		return $this->total() - $this->shipping() - $this->feePackagingBag();
 	}
 
 	/**
