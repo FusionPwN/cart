@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Vanilo\Cart\Models;
 
+use App\Models\Admin\Prescription;
 use Vanilo\Adjustments\Adjusters\DiscountInterval;
 use Vanilo\Adjustments\Adjusters\DiscountStore;
 use Vanilo\Adjustments\Adjusters\DirectDiscount;
@@ -50,7 +51,7 @@ class CartItem extends Model implements CartItemContract, Adjustable
 		});
 	}
 
-	public function cartItemInit() 
+	public function cartItemInit()
 	{
 		$this->price_vat = (float) $this->price_vat;
 		$this->prices = $this->formattedPrice();
@@ -64,12 +65,17 @@ class CartItem extends Model implements CartItemContract, Adjustable
 	public function product()
 	{
 		return $this->hasOne(Product::class, 'id', 'product_id');
-		//return $this->morphTo();
+		#return $this->morphTo(/* __FUNCTION__, 'product_type', 'product_id' */);
 	}
 
-	public function product_discount()
+	public function prescription()
 	{
-		return $this->hasOne(Product::class, 'id', 'product_id')->with('discountTree');
+		return $this->hasOne(Prescription::class, 'id', 'product_id');
+	}
+
+	public function isMNSRM(): bool
+	{
+		return $this->product->isMNSRM() || $this->product->isMNSRMV();
 	}
 
 	/**

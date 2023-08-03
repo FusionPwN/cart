@@ -7,6 +7,7 @@ namespace Vanilo\Cart;
 use App\Events\UpdateCartState;
 use App\Models\Admin\Card;
 use App\Models\Admin\Coupon;
+use App\Models\Admin\Prescription;
 use App\Models\Admin\ShipmentMethod;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
@@ -93,6 +94,26 @@ class CartManager implements CartManagerContract
 		$cart = $this->findOrCreateCart();
 
 		return $cart->addItem($product, $qty, $params);
+	}
+
+	/**
+	 * @inheritDoc
+	 */
+	public function addPrescription(Prescription $prescription)
+	{
+		$cart = $this->findOrCreateCart();
+
+		return $cart->addPrescription($prescription);
+	}
+
+	public function hasPrescription(): bool
+	{
+		return $this->exists() ? $this->model()->hasPrescription() : false;
+	}
+
+	public function prescriptionItem()
+	{
+		return $this->exists() ? $this->model()->prescriptionItem() : false;
 	}
 
 	/**
@@ -439,5 +460,10 @@ class CartManager implements CartManagerContract
 	public function getActiveCoupon(): ?Coupon
 	{
 		return $this->exists() ? $this->model()->getActiveCoupon() : null;
+	}
+
+	public function isValid(): bool
+	{
+		return $this->exists() && ($this->itemCount() > 0 || $this->hasPrescription());
 	}
 }

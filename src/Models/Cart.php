@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Vanilo\Cart\Models;
 
+use App\Models\Admin\Prescription;
 use Vanilo\Cart\Contracts\Cart as CartContract;
 use Vanilo\Contracts\Buyable;
 use App\Models\Admin\Product;
@@ -80,11 +81,18 @@ class Cart extends Model implements CartContract, Adjustable
 	 */
 	public function items()
 	{
-		$model = $this->hasMany(CartItemProxy::modelClass(), 'cart_id', 'id')->actives();
+		$model = $this->hasMany(CartItemProxy::modelClass(), 'cart_id', 'id')->where('product_type', 'product')->actives();
 
 		if (Cache::get('settings.infinite-stock') == 0) {
 			$model = $model->hasStock();
 		}
+
+		return $model;
+	}
+
+	public function prescriptionItem()
+	{
+		$model = $this->hasMany(CartItemProxy::modelClass(), 'cart_id', 'id')->where('product_type', 'prescription');
 
 		return $model;
 	}
@@ -94,7 +102,11 @@ class Cart extends Model implements CartContract, Adjustable
 	 */
 	public function getItems(): Collection
 	{
-		return $this->items;
+		if ($this->hasPrescription()) {
+			return $this->items->merge($this->prescriptionItem);
+		} else {
+			return $this->items;
+		}
 	}
 
 	/**
@@ -167,6 +179,45 @@ class Cart extends Model implements CartContract, Adjustable
 
 			return $item;
 		}
+	}
+
+	public function addPrescription(Prescription $prescription)
+	{
+		$item = $this->prescriptionItem()->ofCart($this)->first();
+
+		if ($item) {
+			if ($item->product_id != $prescription->id) {
+				Prescription::find($item->product_id)->delete();
+			}
+
+			$item->product_id = $prescription->id;
+			$item->save();
+		} else {
+			$item = $this->items()->create([
+				'product_type' => 'prescription',
+				'product_id' => $prescription->id,
+				'quantity' => 1,
+				'price_vat' => 0
+			]);
+		}
+
+		return $item;
+	}
+
+	public function hasPrescription(): bool
+	{
+		return $this->prescriptionItem->count() > 0 ? true : false;
+	}
+
+	public function hasMNSRM(): bool
+	{
+		foreach ($this->items as $item) {
+			if ($item->isMNSRM()) {
+				return true;
+			}
+		}
+
+		return false;
 	}
 
 	/**
