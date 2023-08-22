@@ -198,7 +198,7 @@ trait CheckoutItemFunctions
 		}
 
 		if ($store_discount > 0) {
-			if (Cache::get('settings.campaign_ignore_store_discount') == 1 && count($this->product->discountTree) > 0) {
+			if ($this->product->no_apply_store_discount == 1 || (Cache::get('settings.campaign_ignore_store_discount') == 1 && count($this->product->discountTree) > 0)) {
 				# NAO APLICA DESCONTO LOJA PQ TEM CAPANHAS
 			} else {
 				$this->adjustments()->create(new DiscountStore($adjustable, $this, $store_discount));
