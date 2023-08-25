@@ -52,8 +52,6 @@ trait CheckoutItemFunctions
 		return (float) $adj_total;
 	}
 
-
-
 	public function quantity(): int
 	{
 		$adj_quantity = 0;
