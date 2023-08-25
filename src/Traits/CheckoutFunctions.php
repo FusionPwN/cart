@@ -475,9 +475,10 @@ trait CheckoutFunctions
 
 		if (null !== $shippingAdjustment) {
 			$shippingAdjustment->display_amount = $shippingAdjustment->getAmount();
-		}
-		if (null !== $freeShippingAdjustmentCoupon) {
-			$shippingAdjustment->display_amount += $freeShippingAdjustmentCoupon->getAmount();
+
+			if (null !== $freeShippingAdjustmentCoupon) {
+				$shippingAdjustment->display_amount += $freeShippingAdjustmentCoupon->getAmount();
+			}
 		}
 
 		return $shippingAdjustment;
