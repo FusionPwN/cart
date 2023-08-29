@@ -82,10 +82,7 @@ class Cart extends Model implements CartContract, Adjustable
 	public function items()
 	{
 		$model = $this->hasMany(CartItemProxy::modelClass(), 'cart_id', 'id')->where('product_type', 'product')->actives();
-
-		if (Cache::get('settings.infinite-stock') == 0) {
-			$model = $model->hasStock();
-		}
+		$model = $model->hasStock();
 
 		return $model;
 	}
@@ -146,6 +143,44 @@ class Cart extends Model implements CartContract, Adjustable
 		return collect($items);
 	}
 
+	public function checkAvailability(Buyable $product, $item, $qty)
+	{
+		# 1 se o produto tem stock - adiciona
+		# 1.1 se tiver stock suficiente para adicionar adiciona tudo
+		# 1.2 senao adiciona apenas o que tiver e envia um aviso a dizer quantas unidades adicionou
+
+		# 2 nao tem stock
+		# 2.1 mas tem disponibilidade limitada adiciona ao carrinho até ao valor maximo permitido desse produto
+		# 2.2 tem stock ilimitado adiciona ao carrinho até ao valor maximo permitido desse produto
+		# 2.3 nao adiciona nao tem stock
+
+		$errors = [];
+
+		if (!$product->isUnlimitedAvailability() && !$product->isLimitedAvailability()) {
+			if (null !== $item && $item->quantity + $qty > $product->getStock()) {
+				$qty = abs($product->getStock() - $item->quantity);
+				$errors[] = (object) ['type' => 'warning', 'message' => 'not-enough-stock'];
+			} else if ($qty > $product->getStock()) {
+				$qty = $product->getStock();
+				$errors[] = (object) ['type' => 'warning', 'message' => 'not-enough-stock'];
+			}
+		}
+		if (isset($product->max_stock_cart) && $product->max_stock_cart > 0) {
+			if (null !== $item && $item->quantity + $qty > $product->max_stock_cart) {
+				$qty = abs($product->max_stock_cart - $item->quantity);
+				$errors[] = (object) ['type' => 'warning', 'message' => 'max-quantity-reached'];
+			} else if (null === $item && $qty > $product->max_stock_cart) {
+				$qty = $product->max_stock_cart;
+				$errors[] = (object) ['type' => 'warning', 'message' => 'max-quantity-reached'];
+			}
+		}
+
+		return (object) [
+			'errors'	=> collect($errors),
+			'quantity' 	=> $qty
+		];
+	}
+
 	/**
 	 * @inheritDoc
 	 */
@@ -153,20 +188,23 @@ class Cart extends Model implements CartContract, Adjustable
 	{
 		if ($product->isSimpleProduct()) {
 			$item = $this->items()->ofCart($this)->byProduct($product)->first();
+			$qt = $qty;
 
-			if (Cache::get('settings.infinite-stock') == 0 && ($qty > $product->getStock() || (null !== $item && $item->quantity + $qty > $product->getStock()))) {
-				return (object) [
-					'error' => 'not-enough-stock'
-				];
-			}
+			$result = $this->checkAvailability($product, $item, $qt);
+			$qt = $result->quantity;
 
 			if ($item) {
-				$item->quantity += $qty;
+				$item->quantity += $qt;
+
+				if (isset($product->max_stock_cart) && $product->max_stock_cart > 0) {
+					$item->quantity = $product->max_stock_cart;
+				}
+
 				$item->save();
 			} else {
 				$item = $this->items()->create(
 					array_merge(
-						$this->getDefaultCartItemAttributes($product, $qty),
+						$this->getDefaultCartItemAttributes($product, $qt),
 						$this->getExtraProductMergeAttributes($product),
 						$params['attributes'] ?? []
 					)
@@ -177,7 +215,12 @@ class Cart extends Model implements CartContract, Adjustable
 			$this->refresh();
 			$this->cartInit();
 
-			return $item;
+			#return $item;
+
+			return (object) [
+				'errors'	=> $result->errors,
+				'item' 		=> $item
+			];
 		}
 	}
 
@@ -225,15 +268,18 @@ class Cart extends Model implements CartContract, Adjustable
 	 */
 	public function setItemQty($item, $qty = 1)
 	{
-		if (Cache::get('settings.infinite-stock') == 0 && $qty > $item->product->getStock()) {
-			return (object) [
-				'error' => 'not-enough-stock'
-			];
-		}
+		$qt = $qty;
+		$result = $this->checkAvailability($item->product, $item, $qt);
+		$qt = $result->quantity;
 
 		if ($item) {
 			if ($qty > 0) {
 				$item->quantity = $qty;
+
+				if (isset($item->product->max_stock_cart) && $item->product->max_stock_cart > 0) {
+					$item->quantity = $item->product->max_stock_cart;
+				}
+
 				$item->save();
 			} else {
 				$this->removeItem($item);
@@ -244,7 +290,10 @@ class Cart extends Model implements CartContract, Adjustable
 		$this->refresh();
 		$this->cartInit();
 
-		return $item;
+		return (object) [
+			'errors'	=> $result->errors,
+			'item' 		=> $item
+		];
 	}
 
 	/**
