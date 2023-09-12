@@ -466,4 +466,9 @@ class CartManager implements CartManagerContract
 	{
 		return $this->exists() && ($this->itemCount() > 0 || $this->hasPrescription());
 	}
+
+	public function weight(): float
+	{
+		return $this->exists() ? $this->model()->weight() : 0;
+	}
 }
