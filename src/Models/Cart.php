@@ -157,10 +157,7 @@ class Cart extends Model implements CartContract, Adjustable
 		$errors = [];
 
 		if (!$product->isUnlimitedAvailability() && !$product->isLimitedAvailability()) {
-			if (null !== $item && $item->quantity + $qty > $product->getStock()) {
-				$qty = abs($product->getStock() - $item->quantity);
-				$errors[] = (object) ['type' => 'warning', 'message' => 'not-enough-stock'];
-			} else if ($qty > $product->getStock()) {
+			if (null !== $item && (($item->quantity + $qty > $product->getStock()) || ($qty > $product->getStock()))) {
 				$qty = $product->getStock();
 				$errors[] = (object) ['type' => 'warning', 'message' => 'not-enough-stock'];
 			}
@@ -273,8 +270,8 @@ class Cart extends Model implements CartContract, Adjustable
 		$qt = $result->quantity;
 
 		if ($item) {
-			if ($qty > 0) {
-				$item->quantity = $qty;
+			if ($qt > 0) {
+				$item->quantity = $qt;
 
 				if (isset($item->product->max_stock_cart) && $item->product->max_stock_cart > 0) {
 					$item->quantity = $item->product->max_stock_cart;
