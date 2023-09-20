@@ -606,11 +606,11 @@ trait CheckoutFunctions
 
 		foreach ($this->items as $item) {
 			if (!isset($validProducts) || (isset($validProducts) && $validProducts->contains('product_id', $item->product_id))) {
-				if ($coupon->type == CouponType::PERCENTAGE()->value()) {
+				if ($coupon->type == CouponType::PERCENTAGE()) {
 					$item->adjustments()->create(new CouponPerc($this, $item, $coupon));
-				} else if ($coupon->type == CouponType::NUMERARY()->value()) {
+				} else if ($coupon->type == CouponType::NUMERARY()) {
 					$item->adjustments()->create(new CouponNum($this, $item, $coupon));
-				} else if ($coupon->type == CouponType::FREESHIPPING()->value()) {
+				} else if ($coupon->type == CouponType::FREESHIPPING()) {
 					$this->adjustments()->create(new CouponFreeShipping($this, $coupon));
 					break;
 				}
