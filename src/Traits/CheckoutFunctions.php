@@ -450,7 +450,7 @@ trait CheckoutFunctions
 
 	public function updateFeePackagingBag()
 	{
-		if(Cache::get('settings.checkout_packaging_of_the_order') !== null && Cache::get('settings.checkout_packaging_of_the_order') != "") {
+		if (Cache::get('settings.checkout_packaging_of_the_order') !== null && Cache::get('settings.checkout_packaging_of_the_order') != "") {
 			$this->removeAdjustment(null, AdjustmentTypeProxy::FEE_PACKAGING_BAG());
 			$feePackagingBagAdjustment = $this->adjustments()->create(new FeePackagingBag(Cache::get('settings.checkout_packaging_of_the_order')));
 
@@ -749,5 +749,28 @@ trait CheckoutFunctions
 	public function itemCount()
 	{
 		return $this->items->sum('quantity');
+	}
+
+	public function couponDiscount(): float
+	{
+		$value = 0;
+
+		if ($this instanceof Cart) {
+			foreach ($this->adjustments()->relation()->get() as $adjustment) {
+				if (AdjustmentTypeProxy::IsCoupon($adjustment->type)) {
+					$value = $adjustment->getAmount();
+				}
+			}
+			foreach ($this->items as $item) {
+				foreach ($item->adjustments()->relation()->get() as $adjustment) {
+					if (AdjustmentTypeProxy::IsCoupon($adjustment->type)) {
+						$value = $adjustment->getAmount();
+					}
+				}
+			}
+		} else if ($this instanceof Order) {
+		}
+
+		return abs($value);
 	}
 }

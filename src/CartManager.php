@@ -471,4 +471,9 @@ class CartManager implements CartManagerContract
 	{
 		return $this->exists() ? $this->model()->weight() : 0;
 	}
+
+	public function couponDiscount(): float
+	{
+		return $this->exists() ? $this->model()->couponDiscount() : 0;
+	}
 }
