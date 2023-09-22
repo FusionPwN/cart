@@ -595,7 +595,9 @@ trait CheckoutFunctions
 	 */
 	public function applyCoupon(Coupon $coupon)
 	{
-		$this->coupons()->attach($coupon);
+		if (null === $this->coupons()->where('coupon_id', $coupon->id)->first()) {
+			$this->coupons()->attach($coupon);
+		}
 	}
 
 	public function updateCouponAdjustments(Coupon $coupon)

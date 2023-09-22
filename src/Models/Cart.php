@@ -31,6 +31,8 @@ class Cart extends Model implements CartContract, Adjustable
 	use RecalculatesAdjustments;
 	use CheckoutFunctions;
 
+	public $stockValidator;
+
 	public const EXTRA_PRODUCT_MERGE_ATTRIBUTES_CONFIG_KEY = 'vanilo.cart.extra_product_attributes';
 
 	protected $guarded = ['id'];
@@ -522,5 +524,18 @@ class Cart extends Model implements CartContract, Adjustable
 			->where(DB::raw('YEAR(DATE(created_at))'), DB::raw('YEAR(NOW())'))
 			->orderBy(DB::raw('DATE(created_at)'), $orderby)
 			->groupBy(DB::raw('DATE(created_at)'));
+	}
+
+	public function outOfStockItems()
+	{
+		$out = collect();
+
+		foreach ($this->items as $item) {
+			if (!$item->product->isOnStock()) {
+				$out->add($item);
+			}
+		}
+
+		return $out;
 	}
 }
