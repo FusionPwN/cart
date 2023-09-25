@@ -644,7 +644,7 @@ trait CheckoutFunctions
 			new CanBeUsedWithProducts($coupon, $this)
 		];
 
-		if ($coupon->type == CouponType::FREESHIPPING()->value()) {
+		if ($coupon->type == CouponType::FREESHIPPING()) {
 			$shippingAdjustment = $this->getAdjustmentByType(AdjustmentTypeProxy::SHIPPING());
 			if (null !== $shippingAdjustment) {
 				array_push($rules, new IsValidShippingAdjustment($coupon, $this, $shippingAdjustment));
