@@ -193,7 +193,11 @@ class Cart extends Model implements CartContract, Adjustable
 			$qt = $result->quantity;
 
 			if ($item) {
-				$item->quantity += $qt;
+				if(count($result->errors) > 0){
+					$item->quantity = $qt;
+				} else {
+					$item->quantity += $qt;
+				}
 
 				if (isset($product->max_stock_cart) && $product->max_stock_cart > 0) {
 					$item->quantity = $product->max_stock_cart;
