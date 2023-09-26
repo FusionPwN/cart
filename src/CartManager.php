@@ -424,7 +424,7 @@ class CartManager implements CartManagerContract
 
 	public function getShippingAdjustment(): ?Adjustment
 	{
-		return $this->model()->getShippingAdjustment();
+		return $this->exists() ? $this->model()->getShippingAdjustment() : null;
 	}
 
 	public function getClientCardAdjustment(): ?Adjustment
@@ -469,8 +469,7 @@ class CartManager implements CartManagerContract
 
 	public function isValid(): bool
 	{
-		return $this->exists() && ($this->itemCount() > 0 || $this->hasPrescription());
-		#return $this->exists() ? $this->model()->isValid() : false;
+		return $this->exists() ? $this->model()->isValid() : false;
 	}
 
 	public function weight(): float

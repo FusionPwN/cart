@@ -87,9 +87,6 @@ class Cart extends Model implements CartContract, Adjustable
 	{
 		$model = $this->hasMany(CartItemProxy::modelClass(), 'cart_id', 'id')->where('product_type', 'product');
 
-		# $model = $this->hasMany(CartItemProxy::modelClass(), 'cart_id', 'id')->where('product_type', 'product')->actives();
-		# $model = $model->hasStock();
-
 		return $model;
 	}
 
@@ -121,6 +118,8 @@ class Cart extends Model implements CartContract, Adjustable
 			'cart' => clone $this->items,
 			'free' => []
 		];
+
+		$out = $this->outOfStockItems();
 
 		foreach ($items['cart'] as &$item) {
 			$item->display_quantity = $item->quantity;
