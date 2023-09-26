@@ -8,6 +8,7 @@ use App\Models\Admin\Prescription;
 use Vanilo\Cart\Contracts\Cart as CartContract;
 use Vanilo\Contracts\Buyable;
 use App\Models\Admin\Product;
+use App\Rules\CartValidForCheckout;
 use Carbon\Carbon;
 use Vanilo\Cart\Models\CartItemProxy;
 use Illuminate\Contracts\Auth\Authenticatable;
@@ -22,6 +23,7 @@ use Vanilo\Adjustments\Support\HasAdjustmentsViaRelation;
 use Vanilo\Adjustments\Support\RecalculatesAdjustments;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Validator;
 use Vanilo\Cart\Traits\CheckoutFunctions;
 
 class Cart extends Model implements CartContract, Adjustable
@@ -31,7 +33,7 @@ class Cart extends Model implements CartContract, Adjustable
 	use RecalculatesAdjustments;
 	use CheckoutFunctions;
 
-	public $stockValidator;
+	public $validator;
 
 	public const EXTRA_PRODUCT_MERGE_ATTRIBUTES_CONFIG_KEY = 'vanilo.cart.extra_product_attributes';
 
@@ -83,8 +85,10 @@ class Cart extends Model implements CartContract, Adjustable
 	 */
 	public function items()
 	{
-		$model = $this->hasMany(CartItemProxy::modelClass(), 'cart_id', 'id')->where('product_type', 'product')->actives();
-		$model = $model->hasStock();
+		$model = $this->hasMany(CartItemProxy::modelClass(), 'cart_id', 'id')->where('product_type', 'product');
+
+		# $model = $this->hasMany(CartItemProxy::modelClass(), 'cart_id', 'id')->where('product_type', 'product')->actives();
+		# $model = $model->hasStock();
 
 		return $model;
 	}
@@ -193,7 +197,7 @@ class Cart extends Model implements CartContract, Adjustable
 			$qt = $result->quantity;
 
 			if ($item) {
-				if(count($result->errors) > 0){
+				if (count($result->errors) > 0) {
 					$item->quantity = $qt;
 				} else {
 					$item->quantity += $qt;
@@ -541,5 +545,19 @@ class Cart extends Model implements CartContract, Adjustable
 		}
 
 		return $out;
+	}
+
+	public function validator()
+	{
+		return isset($this->validator) ? $this->validator : null;
+	}
+
+	public function isValid()
+	{
+		$this->validator = Validator::make(['cart' => 1], [
+			'cart' => [new CartValidForCheckout($this)]
+		], [], []);
+
+		return !$this->validator->fails();
 	}
 }

@@ -452,6 +452,11 @@ class CartManager implements CartManagerContract
 		return $this->exists() ? $this->model()->validateCoupon($coupon) : false;
 	}
 
+	public function couponValidator()
+	{
+		return $this->exists() ? $this->model()->couponValidator() : null;
+	}
+
 	public function validator()
 	{
 		return $this->exists() ? $this->model()->validator() : null;
@@ -465,6 +470,7 @@ class CartManager implements CartManagerContract
 	public function isValid(): bool
 	{
 		return $this->exists() && ($this->itemCount() > 0 || $this->hasPrescription());
+		#return $this->exists() ? $this->model()->isValid() : false;
 	}
 
 	public function weight(): float

@@ -50,7 +50,7 @@ trait CheckoutFunctions
 	public array $applyableDiscounts = [];
 	public array $conflictingDiscounts = [];
 
-	public $validator;
+	public $couponValidator;
 	public $activeCoupon;
 
 	public ShipmentMethod $shipping;
@@ -286,7 +286,7 @@ trait CheckoutFunctions
 		if ($this->coupons->first()) {
 			$this->validateCoupon($this->coupons->first());
 
-			if ($this->validator->fails()) {
+			if ($this->couponValidator->fails()) {
 				$this->activeCoupon = null;
 			} else {
 				$this->activeCoupon = $this->coupons->first();
@@ -428,7 +428,7 @@ trait CheckoutFunctions
 		}
 
 		$this->removeAdjustment(null, AdjustmentTypeProxy::SHIPPING());
-		$shippingAdjustment = $this->adjustments()->create(new SimpleShippingFee($price, $threshold));
+		$shippingAdjustment = $this->adjustments()->create(new SimpleShippingFee($this->shipping, $price, $threshold));
 
 		return $shippingAdjustment;
 	}
@@ -657,18 +657,18 @@ trait CheckoutFunctions
 			array_push($rules, new ProductsAllowFreeShipping($this));
 		}
 
-		$this->validator = Validator::make(['coupon_code' => $coupon->code], [
+		$this->couponValidator = Validator::make(['coupon_code' => $coupon->code], [
 			'coupon_code' => $rules
 		], [], [
 			'coupon_code' => strtolower(__('frontoffice.coupon_checkout'))
 		]);
 
-		return $this->validator;
+		return $this->couponValidator;
 	}
 
-	public function validator()
+	public function couponValidator()
 	{
-		return isset($this->validator) ? $this->validator : null;
+		return isset($this->couponValidator) ? $this->couponValidator : null;
 	}
 
 	public function getActiveCoupon(): ?Coupon
