@@ -25,6 +25,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Vanilo\Cart\Traits\CheckoutFunctions;
+use Vanilo\Product\Models\ProductStateProxy;
 
 class Cart extends Model implements CartContract, Adjustable
 {
@@ -85,7 +86,7 @@ class Cart extends Model implements CartContract, Adjustable
 	 */
 	public function items()
 	{
-		$model = $this->hasMany(CartItemProxy::modelClass(), 'cart_id', 'id')->where('product_type', 'product');
+		$model = $this->hasMany(CartItemProxy::modelClass(), 'cart_id', 'id')->where('product_type', 'product')->listableInverse();
 
 		return $model;
 	}
@@ -123,6 +124,13 @@ class Cart extends Model implements CartContract, Adjustable
 
 		foreach ($items['cart'] as &$item) {
 			$item->display_quantity = $item->quantity;
+
+			if ($out->where('product_id', $item->product_id)->count() > 0) {
+				$item->out_of_stock = true;
+			} else {
+				$item->out_of_stock = false;
+			}
+
 			foreach ($item->adjustments()->getIterator() as $adjustment) {
 				if (AdjustmentTypeProxy::IsVisualSeparator($adjustment->type)) {
 					if ($adjustment->type == AdjustmentTypeProxy::OFERTA_BARATO() || $adjustment->type == AdjustmentTypeProxy::OFERTA_PROD_IGUAL()) {
@@ -162,7 +170,7 @@ class Cart extends Model implements CartContract, Adjustable
 		$errors = [];
 
 		if (!$product->isUnlimitedAvailability() && !$product->isLimitedAvailability()) {
-			if (null !== $item && (($item->quantity + $qty > $product->getStock()) || ($qty > $product->getStock()))) {
+			if ((null !== $item && ($item->quantity + $qty > $product->getStock())) || ($qty > $product->getStock())) {
 				$qty = $product->getStock();
 				$errors[] = (object) ['type' => 'warning', 'message' => 'not-enough-stock'];
 			}
@@ -220,8 +228,6 @@ class Cart extends Model implements CartContract, Adjustable
 			$this->load('items');
 			$this->refresh();
 			$this->cartInit();
-
-			#return $item;
 
 			return (object) [
 				'errors'	=> $result->errors,

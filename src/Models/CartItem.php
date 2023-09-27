@@ -118,6 +118,20 @@ class CartItem extends Model implements CartItemContract, Adjustable
 	}
 
 	/**
+	 * Scope for returning the products with active state
+	 *
+	 * @param \Illuminate\Database\Eloquent\Builder $query
+	 *
+	 * @return \Illuminate\Database\Eloquent\Builder
+	 */
+	public function scopeListableInverse($query)
+	{
+		return $query->whereHas('product', function ($query) {
+			$query->listableInverse();
+		});
+	}
+
+	/**
 	 * Scope for returning the products that have an above 0 stock value
 	 *
 	 * @param \Illuminate\Database\Eloquent\Builder $query
