@@ -25,6 +25,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Vanilo\Cart\Traits\CheckoutFunctions;
+use App\Classes\Utilities;
 use Vanilo\Product\Models\ProductStateProxy;
 
 class Cart extends Model implements CartContract, Adjustable
