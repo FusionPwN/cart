@@ -355,6 +355,32 @@ class Cart extends Model implements CartContract, Adjustable
 		$this->conflictingDiscounts = $this->getConflictingDiscounts();
 	}
 
+	public function totalAccumulatedCard(): float
+	{
+		$acumulatedValue = 0;
+		
+		if(Cache::get('settings.client_card') == 1) {
+			if($this->getItems() !== null && count($this->getItems()) > 0)
+			{
+				foreach ($this->getItems() as $item) {
+					if(($item->product->msrm == 1 || $item->product->mnsrm == 1 || $item->product->msrmv == 1 || $item->product->mnsrmv == 1) && Cache::get('settings.pecentage_credited_to_the_card_msrm') !== null && Cache::get('settings.pecentage_credited_to_the_card_msrm') !== '') {
+						if(Cache::get('settings.max_pvp_msrm_to_the_card') !== null && Cache::get('settings.max_pvp_msrm_to_the_card') !== ''){
+							if($item->price_vat <= (float) Cache::get('settings.max_pvp_msrm_to_the_card')){
+								$acumulatedValue += Utilities::RoundPrice((Cache::get('settings.pecentage_credited_to_the_card_msrm') / 100) * $item->price_vat);
+							}
+						} else {
+							$acumulatedValue += Utilities::RoundPrice((Cache::get('settings.pecentage_credited_to_the_card_msrm') / 100) * $item->price_vat);
+						}
+					} else {
+						$acumulatedValue += Utilities::RoundPrice((Cache::get('settings.pecentage_credited_to_the_card') / 100) * $item->price_vat);
+					}
+				}
+			}
+		}
+
+		return $acumulatedValue;
+	}
+
 	public function totalWithCard(): float
 	{
 		return $this->itemsTotal() + $this->adjustments()->total();

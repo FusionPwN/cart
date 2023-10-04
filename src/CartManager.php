@@ -180,6 +180,11 @@ class CartManager implements CartManagerContract
 		return $this->exists() ? $this->model()->total() : 0;
 	}
 
+	public function totalAccumulatedCard(): float
+	{
+		return $this->exists() ? $this->model()->totalAccumulatedCard() : 0;
+	}
+
 	/**
 	 * @inheritDoc
 	 */
