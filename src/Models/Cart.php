@@ -364,16 +364,39 @@ class Cart extends Model implements CartContract, Adjustable
 			if($this->getItems() !== null && count($this->getItems()) > 0)
 			{
 				foreach ($this->getItems() as $item) {
-					if(($item->product->msrm == 1 || $item->product->mnsrm == 1 || $item->product->msrmv == 1 || $item->product->mnsrmv == 1) && Cache::get('settings.pecentage_credited_to_the_card_msrm') !== null && Cache::get('settings.pecentage_credited_to_the_card_msrm') !== '') {
+					$p_discounts = $item->product->validDiscountTree;
+
+					$percentageCardMsrm = Cache::get('settings.pecentage_credited_to_the_card_msrm');
+					$percentageCard = Cache::get('settings.pecentage_credited_to_the_card');
+
+					if(isset($p_discounts) && count($p_discounts) > 0){
+						foreach($p_discounts as $discount){
+							if(isset($discount->value_card) && $discount->value_card > 0){
+								if($discount->type_card == "%"){
+									if(($item->product->msrm == 1 || $item->product->msrmv == 1 ) && Cache::get('settings.pecentage_credited_to_the_card_msrm') !== null && Cache::get('settings.pecentage_credited_to_the_card_msrm') !== '') {
+										$percentageCardMsrm = $percentageCardMsrm + $discount->value_card;
+									} else {
+										$percentageCard = $percentageCard + $discount->value_card;
+									}
+								} else {
+									$acumulatedValue += $discount->value_card;
+								}
+							}
+							
+							break;
+						}
+					} 
+
+					if(($item->product->msrm == 1 || $item->product->msrmv == 1 ) && Cache::get('settings.pecentage_credited_to_the_card_msrm') !== null && Cache::get('settings.pecentage_credited_to_the_card_msrm') !== '') {
 						if(Cache::get('settings.max_pvp_msrm_to_the_card') !== null && Cache::get('settings.max_pvp_msrm_to_the_card') !== ''){
-							if($item->price_vat <= (float) Cache::get('settings.max_pvp_msrm_to_the_card')){
-								$acumulatedValue += Utilities::RoundPrice((Cache::get('settings.pecentage_credited_to_the_card_msrm') / 100) * $item->price_vat);
+							if($item->prices->price <= (float) Cache::get('settings.max_pvp_msrm_to_the_card')){
+								$acumulatedValue += Utilities::RoundPrice(($percentageCardMsrm / 100) * $item->prices->price);
 							}
 						} else {
-							$acumulatedValue += Utilities::RoundPrice((Cache::get('settings.pecentage_credited_to_the_card_msrm') / 100) * $item->price_vat);
+							$acumulatedValue += Utilities::RoundPrice(($percentageCardMsrm / 100) * $item->prices->price);
 						}
 					} else {
-						$acumulatedValue += Utilities::RoundPrice((Cache::get('settings.pecentage_credited_to_the_card') / 100) * $item->price_vat);
+						$acumulatedValue += Utilities::RoundPrice(($percentageCard / 100) * $item->prices->price);
 					}
 				}
 			}
