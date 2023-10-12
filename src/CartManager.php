@@ -204,6 +204,22 @@ class CartManager implements CartManagerContract
 	/**
 	 * @inheritDoc
 	 */
+	public function getAdjustmentsDiscountTotal(): float
+	{
+		return $this->exists() ? $this->model()->getAdjustmentsDiscountTotal() : [];
+	}
+
+	/**
+	 * @inheritDoc
+	 */
+	public function getAdjustmentsTotalsParcels(): object
+	{
+		return $this->exists() ? $this->model()->getAdjustmentsTotalsParcels() : [];
+	}
+
+	/**
+	 * @inheritDoc
+	 */
 	public function exists()
 	{
 		return (bool) $this->getCartId() && $this->model();

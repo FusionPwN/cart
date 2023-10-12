@@ -518,15 +518,17 @@ trait CheckoutFunctions
 		}
 	}
 
-	public function getAdjustmentsTotals(): array
+	
+	public function getAdjustmentsTotalsParcels(): object
 	{
 		$adjTypes = AdjustmentTypeProxy::choices();
+		$returnType = $adjTypes;
 
 		foreach ($adjTypes as $key => $value) {
 			$const = Str::upper($key);
 			$label = $value;
 
-			$adjTypes[$key] = [
+			$returnType[$key] = (object) [
 				'label' => $label,
 				'total' => $this->adjustments()->byType(AdjustmentTypeProxy::$const())->total()
 			];
@@ -535,13 +537,29 @@ trait CheckoutFunctions
 		foreach ($this->items as $item) {
 			foreach ($adjTypes as $key => &$value) {
 				$const = Str::upper($key);
-
-				$value['total'] += $item->adjustments()->byType(AdjustmentTypeProxy::$const())->total();
-				$value['total'] = Utilities::FormatPrice($value['total'], 2, ',', '.');
+				$label = $value;
+				$returnType[$key] = (object) [
+					'label' => $label,
+					'total' => $returnType[$key]->total + ($item->adjustments()->byType(AdjustmentTypeProxy::$const())->total())
+				];
 			}
 		}
 
-		return $adjTypes;
+		return (object) $returnType;
+	}
+
+	public function getAdjustmentsDiscountTotal(): float 
+	{
+		$total = 0;
+		$parcels = $this->getAdjustmentsTotalsParcels();
+
+		foreach ($parcels as $parcel) {
+			if ($parcel->total < 0) {
+				$total += ($parcel->total);
+			}
+		}
+
+		return abs($total);
 	}
 
 	public function hasDirectDiscounts()
