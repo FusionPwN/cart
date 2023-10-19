@@ -62,7 +62,7 @@ trait CheckoutFunctions
 		if ($this instanceof Cart) {
 			return $this->belongsToMany(Coupon::class, 'cart_coupons')->using(CartCoupons::class);
 		} else if ($this instanceof Order) {
-			return $this->belongsToMany(Coupon::class, 'orders_coupons')->using(OrderCoupon::class);
+			return $this->belongsToMany(Coupon::class, 'orders_coupons');
 		}
 
 		throw new Exception(
