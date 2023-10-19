@@ -5,6 +5,7 @@ namespace Vanilo\Cart\Traits;
 use App\Models\Admin\Order;
 use App\Models\Admin\OrderItem;
 use Exception;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Vanilo\Adjustments\Adjusters\DirectDiscount;
 use Vanilo\Adjustments\Adjusters\DiscountInterval;
@@ -277,5 +278,18 @@ trait CheckoutItemFunctions
 	public function getAdjustedPriceAttribute()
 	{
 		return $this->getAdjustedPrice();
+	}
+
+	public function getCampaignAdjustments(): Collection
+	{
+		$adjustments = collect();
+
+		foreach ($this->adjustments()->getIterator() as $adjustment) {
+			if (AdjustmentTypeProxy::IsCampaignDiscount($adjustment->type)) {
+				$adjustments->add($adjustment);
+			}
+		}
+
+		return $adjustments;
 	}
 }
