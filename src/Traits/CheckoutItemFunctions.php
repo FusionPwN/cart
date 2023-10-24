@@ -292,4 +292,17 @@ trait CheckoutItemFunctions
 
 		return $adjustments;
 	}
+
+	public function getCouponAdjustments(): Collection
+	{
+		$adjustments = collect();
+
+		foreach ($this->adjustments()->getIterator() as $adjustment) {
+			if (AdjustmentTypeProxy::IsCoupon($adjustment->type)) {
+				$adjustments->add($adjustment);
+			}
+		}
+
+		return $adjustments;
+	}
 }
