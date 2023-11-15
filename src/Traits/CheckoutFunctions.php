@@ -281,7 +281,9 @@ trait CheckoutFunctions
 		}
 
 		$this->updateShippingFee();
-		$this->updateFeePackagingBag();
+		if (null !== $this->id) {
+			$this->updateFeePackagingBag();
+		}
 
 		if ($this->coupons->first()) {
 			$this->validateCoupon($this->coupons->first());
