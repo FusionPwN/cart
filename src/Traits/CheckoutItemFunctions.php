@@ -144,7 +144,6 @@ trait CheckoutItemFunctions
 	public function removeAllAdjustments()
 	{
 		$adjustments = $this->adjustments()->getIterator();
-
 		foreach ($adjustments as $adjustment) {
 			$this->removeAdjustment($adjustment);
 		}

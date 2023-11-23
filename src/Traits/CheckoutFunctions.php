@@ -163,7 +163,6 @@ trait CheckoutFunctions
 						break;
 					case 'oferta_barato':
 						$discount['cart_items'] = $discount['cart_items']->sortBy('prices.price_unit');
-
 						break;
 					case 'oferta_prod_igual':
 						break;
@@ -171,7 +170,6 @@ trait CheckoutFunctions
 						break;
 					case 'oferta_percentagem':
 						$discount['cart_items'] = $discount['cart_items']->sortByDesc('prices.price_unit')->values(); # values()->all() para fazer reset nas keys do array
-
 						break;
 					case 'oferta_desc_carrinho':
 						break;
@@ -228,8 +226,37 @@ trait CheckoutFunctions
 
 		foreach ($this->applyableDiscounts as $discount) {
 			$discount_data = $discount['discount_data'];
-			$level = 0;
-			$count = 0;
+			$item_count = $discount['cart_items']->sum('quantity');
+
+			if ($discount['tag'] == 'oferta_percentagem') {
+				$level_list_count = 0;
+				$level_count = 0;
+				$level_list = [];
+
+				if ($discount_data->properties->highest == 1) {
+					$max_level = $item_count > count($discount_data->properties->levels) ? count($discount_data->properties->levels) - 1 : $item_count - 1;
+
+					for ($i = 0; $i < $item_count; $i++) {
+						$level_list[] = [
+							'level' => $max_level,
+							'value' => $discount_data->properties->levels[$max_level]
+						];
+					}
+				} else {
+					for ($i = 0; $i < $item_count; $i++) {
+						$level_count = $level_count > count($discount_data->properties->levels) - 1 ? 0 : $level_count;
+						$level_list[] = [
+							'level' => $level_count,
+							'value' => $discount_data->properties->levels[$level_count] # este valor apenas serve para a ordenaçao
+						];
+
+						$level_count++;
+					}
+				}
+
+				$level_list = collect($level_list)->sortBy('value')->values();
+			}
+
 
 			foreach ($discount['cart_items'] as $item) {
 				if ($this instanceof Order && $item->overridesPrice()) {
@@ -258,17 +285,9 @@ trait CheckoutFunctions
 						$item->adjustments()->create(new DiscountFree($this, $discount_data));
 						break; # break pq este desconto só vai ser aplicado 1x
 					} else if ($discount['tag'] == 'oferta_percentagem') {
-						$count++;
-
-						if ($discount_data->properties->highest == 1) {
-							$level = count($discount['cart_items']) > count($discount_data->properties->levels) ? count($discount_data->properties->levels) - 1 : count($discount['cart_items']) - 1;
-						}
-
-						$item->adjustments()->create(new DiscountScalablePercNum($this, $item, $discount_data, $level));
-
-						if ($discount_data->properties->highest == 0 && round(count($discount['cart_items']) / count($discount_data->properties->levels)) == $count) {
-							$count = 0;
-							$level++;
+						for ($i = 0; $i < $item->quantity; $i++) {
+							$this->adjustments()->create(new DiscountScalablePercNum($this, $item, $discount_data, $level_list[$level_list_count]['level']));
+							$level_list_count++;
 						}
 					}
 				}
@@ -582,7 +601,7 @@ trait CheckoutFunctions
 		}
 	}
 
-	
+
 	public function getAdjustmentsTotalsParcels(): object
 	{
 		$adjTypes = AdjustmentTypeProxy::choices();
@@ -612,7 +631,7 @@ trait CheckoutFunctions
 		return (object) $returnType;
 	}
 
-	public function getAdjustmentsDiscountTotal(): float 
+	public function getAdjustmentsDiscountTotal(): float
 	{
 		$total = 0;
 		$parcels = $this->getAdjustmentsTotalsParcels();
