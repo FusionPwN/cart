@@ -43,6 +43,7 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Vanilo\Adjustments\Adjusters\FeePackagingBag;
 use Vanilo\Cart\Models\Cart;
+use App\Models\Admin\PostalCodeWhitelist;
 
 trait CheckoutFunctions
 {
@@ -52,6 +53,7 @@ trait CheckoutFunctions
 
 	public $couponValidator;
 	public $activeCoupon;
+	public $shippingAddress;
 
 	public ShipmentMethod $shipping;
 	public Country $selectedCountry;
@@ -381,6 +383,11 @@ trait CheckoutFunctions
 		$this->selectedCountry = $country;
 	}
 
+	public function setShippingAddress($shippingAddress)
+	{
+		$this->shippingAddress = $shippingAddress;
+	}
+
 	public function getAdjustmentByType(AdjustmentType $type = null)
 	{
 		if (!isset($type)) {
@@ -425,6 +432,61 @@ trait CheckoutFunctions
 			foreach ($shippingWeights as $shippingWeight) {
 				if ($shippingWeight->zone_group_id == $shippingZone->id) {
 					$price = $shippingWeight->price;
+				}
+			}
+		}else if($this->shipping->isHomeDelivery()){
+			$havePriceInPostalCode = PostalCodeWhitelist::where('postalcode',$this->shippingAddress['postalcode'])->get();
+
+			if(count($havePriceInPostalCode) > 0) {
+				$price = $havePriceInPostalCode->first()->shipping_price;
+			} else {
+				$postalCodeArr = explode('-',$this->shippingAddress['postalcode']);
+
+				$havePriceInPostalCode = PostalCodeWhitelist::where('postalcode',$postalCodeArr[0])->get();
+
+				if(count($havePriceInPostalCode) == 0) {
+					//Não existe este código postal na tabela logo elimina do array de metodos de envio
+					throw new Exception('Este código postal não é valido para entrega ao domicilio');
+				} else if(count($havePriceInPostalCode) == 1){
+					//Encontrou um resultado coloca o preço que está definido
+					$price = $havePriceInPostalCode->first()->shipping_price;
+				} else if(count($havePriceInPostalCode) > 1) {
+					//Encontrou mais que 1 resultado primeiro verificar se os preços são iguais
+					$priceT = $havePriceInPostalCode->first()->shipping_price;
+					$count = 0;
+					foreach($havePriceInPostalCode as $item){
+						if($item->shipping_price != $priceT){
+							$count = 1;
+						}
+					}
+					
+					if($count == 0){
+						$price = $priceT;
+					} else {
+						// Get cURL resource
+						$curl = curl_init();
+						// Set some options - we are passing in a useragent too here
+						curl_setopt_array($curl, array(
+							CURLOPT_RETURNTRANSFER => 1,
+							CURLOPT_URL => 'http://codpostal.coolsis.pt/?codpostal1='.$postalCodeArr[0].'&codpostal2='.$postalCodeArr[1],
+						));
+						// Send the request & save response to $resp
+						$resp = curl_exec($curl);
+						if ($resp) {
+							$json_array = (array) json_decode($resp);
+							$ret['localidade'] = $json_array[0]->localidade;
+							$ret['nome_concelho'] =  $json_array[0]->nome_concelho;
+							$ret['nome_distrito'] =  $json_array[0]->nome_distrito;
+							$havePriceInPostalCode = PostalCodeWhitelist::where('postalcode',$postalCodeArr[0])->whereRaw('LOWER(parish) = ?', [strtolower($json_array[0]->localidade)])->first();
+							if(isset($havePriceInPostalCode)){
+								$price= $havePriceInPostalCode->shipping_price;
+							}
+						} else {
+							throw new Exception('Este código postal não é valido para entrega ao domicilio');
+						}
+						//Close request to clear up some resources
+						curl_close($curl);
+					}
 				}
 			}
 		}

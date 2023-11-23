@@ -428,6 +428,11 @@ class CartManager implements CartManagerContract
 		return $this->model()->setCountry($country);
 	}
 
+	public function setShippingAddress($shippingAddress)
+	{
+		return $this->model()->setShippingAddress($shippingAddress);
+	}
+
 	public function updateShippingFee()
 	{
 		return $this->model()->updateShippingFee();
