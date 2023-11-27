@@ -457,6 +457,10 @@ trait CheckoutFunctions
 			$havePriceInPostalCode = PostalCodeWhitelist::where('postalcode',$this->shippingAddress['postalcode'])->get();
 
 			if(count($havePriceInPostalCode) > 0) {
+				if (!$this->itemsPreventFreeShipping() && $havePriceInPostalCode->first()->shipping_offer == 1) {
+					$threshold = $havePriceInPostalCode->first()->value ?? null;
+				}
+				
 				$price = $havePriceInPostalCode->first()->shipping_price;
 			} else {
 				$postalCodeArr = explode('-',$this->shippingAddress['postalcode']);
@@ -467,6 +471,9 @@ trait CheckoutFunctions
 					//Não existe este código postal na tabela logo elimina do array de metodos de envio
 					throw new Exception('Este código postal não é valido para entrega ao domicilio');
 				} else if(count($havePriceInPostalCode) == 1){
+					if (!$this->itemsPreventFreeShipping() && $havePriceInPostalCode->first()->shipping_offer == 1) {
+						$threshold = $havePriceInPostalCode->first()->value ?? null;
+					}
 					//Encontrou um resultado coloca o preço que está definido
 					$price = $havePriceInPostalCode->first()->shipping_price;
 				} else if(count($havePriceInPostalCode) > 1) {
@@ -480,6 +487,9 @@ trait CheckoutFunctions
 					}
 					
 					if($count == 0){
+						if (!$this->itemsPreventFreeShipping() && $havePriceInPostalCode->first()->shipping_offer == 1) {
+							$threshold = $havePriceInPostalCode->first()->value ?? null;
+						}
 						$price = $priceT;
 					} else {
 						// Get cURL resource
@@ -498,6 +508,9 @@ trait CheckoutFunctions
 							$ret['nome_distrito'] =  $json_array[0]->nome_distrito;
 							$havePriceInPostalCode = PostalCodeWhitelist::where('postalcode',$postalCodeArr[0])->whereRaw('LOWER(parish) = ?', [strtolower($json_array[0]->localidade)])->first();
 							if(isset($havePriceInPostalCode)){
+								if (!$this->itemsPreventFreeShipping() && $havePriceInPostalCode->shipping_offer == 1) {
+									$threshold = $havePriceInPostalCode->value ?? null;
+								}
 								$price= $havePriceInPostalCode->shipping_price;
 							}
 						} else {
