@@ -223,7 +223,7 @@ trait CheckoutItemFunctions
 			$this->removeAdjustment($directAdjustment);
 		}
 
-		if ($this->product->validDirectDiscount()) {
+		if ($this->product->validDirectDiscount() && (count($this->product->discountTreeWithTypePivot) == 0 || (count($this->product->discountTreeWithTypePivot) > 0 && $this->product->discountTreeWithTypePivot->first()->can_stack_direct_discount == 1))) {
 			$this->adjustments()->create(new DirectDiscount($adjustable, $this));
 		}
 	}

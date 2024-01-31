@@ -261,7 +261,7 @@ trait CheckoutFunctions
 			foreach ($discount['cart_items'] as $item) {
 				if ($this instanceof Order && $item->overridesPrice()) {
 				} else {
-					if ($item->product->validDirectDiscount() && !$item->product->directDiscountStacksWithDiscounts()) {
+					if ($item->product->validDirectDiscount() && !$item->product->directDiscountStacksWithDiscounts() && $discount_data['can_stack_direct_discount'] == 1) {
 						continue;
 					}
 
