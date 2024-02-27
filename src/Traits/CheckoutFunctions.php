@@ -55,6 +55,8 @@ trait CheckoutFunctions
 	public $activeCoupon;
 	public $shippingAddress;
 
+	public $validationErrors = [];
+
 	public ShipmentMethod $shipping;
 	public Country $selectedCountry;
 	public Card $card;
@@ -76,7 +78,6 @@ trait CheckoutFunctions
 			)
 		);
 	}
-
 
 	/**
 	 * Returns a specific item from cart
@@ -255,9 +256,22 @@ trait CheckoutFunctions
 				}
 
 				$level_list = collect($level_list)->sortBy('value')->values();
-			} else if ($discount['tag'] == 'oferta_barato') {
+			} else if ($discount['tag'] == 'oferta_barato' || $discount['tag'] == 'oferta_prod') {
 				$remainder = $item_count % $discount_data->purchase_number;
 				$free_quantity = (($item_count - $remainder) / $discount_data->purchase_number) * $discount_data->offer_number;
+
+				# validar se o nr de artigos selecionados para oferta é maior do que o nr a oferecer, caso o cliente reduza a quantidade a comprar
+				$gifts = session('checkout.selected_gifts', []);
+				$temp_gifts = [];
+				if (count($gifts) > $free_quantity) {
+					for ($i = 0; $i < $free_quantity; $i++) {
+						$temp_gifts["selection-$i"] = $gifts["selection-$i"];
+					}
+
+					session()->put('checkout.selected_gifts', $temp_gifts);
+				} else if (count($gifts) < $free_quantity) {
+					$this->validationErrors[] = 'missing_gift_selection';
+				}
 			}
 
 			foreach ($discount['cart_items'] as $item) {
@@ -280,7 +294,7 @@ trait CheckoutFunctions
 					} else if ($discount['tag'] == 'oferta_prod_igual') {
 						$item->adjustments()->create(new DiscountSameFree($this, $item, $discount_data));
 					} else if ($discount['tag'] == 'oferta_prod') {
-						$item->adjustments()->create(new DiscountFree($this, $discount_data));
+						$item->adjustments()->create(new DiscountFree($this, $discount_data, $free_quantity));
 						break; # break pq este desconto só vai ser aplicado 1x
 					} else if ($discount['tag'] == 'oferta_percentagem') {
 						for ($i = 0; $i < $item->quantity; $i++) {
@@ -451,40 +465,40 @@ trait CheckoutFunctions
 					$price = $shippingWeight->price;
 				}
 			}
-		}else if($this->shipping->isHomeDelivery()){
-			$havePriceInPostalCode = PostalCodeWhitelist::where('postalcode',$this->shippingAddress['postalcode'])->get();
+		} else if ($this->shipping->isHomeDelivery()) {
+			$havePriceInPostalCode = PostalCodeWhitelist::where('postalcode', $this->shippingAddress['postalcode'])->get();
 
-			if(count($havePriceInPostalCode) > 0) {
+			if (count($havePriceInPostalCode) > 0) {
 				if (!$this->itemsPreventFreeShipping() && $havePriceInPostalCode->first()->shipping_offer == 1) {
 					$threshold = $havePriceInPostalCode->first()->value ?? null;
 				}
-				
+
 				$price = $havePriceInPostalCode->first()->shipping_price;
 			} else {
-				$postalCodeArr = explode('-',$this->shippingAddress['postalcode']);
+				$postalCodeArr = explode('-', $this->shippingAddress['postalcode']);
 
-				$havePriceInPostalCode = PostalCodeWhitelist::where('postalcode',$postalCodeArr[0])->get();
+				$havePriceInPostalCode = PostalCodeWhitelist::where('postalcode', $postalCodeArr[0])->get();
 
-				if(count($havePriceInPostalCode) == 0) {
+				if (count($havePriceInPostalCode) == 0) {
 					//Não existe este código postal na tabela logo elimina do array de metodos de envio
 					throw new Exception('Este código postal não é valido para entrega ao domicilio');
-				} else if(count($havePriceInPostalCode) == 1){
+				} else if (count($havePriceInPostalCode) == 1) {
 					if (!$this->itemsPreventFreeShipping() && $havePriceInPostalCode->first()->shipping_offer == 1) {
 						$threshold = $havePriceInPostalCode->first()->value ?? null;
 					}
 					//Encontrou um resultado coloca o preço que está definido
 					$price = $havePriceInPostalCode->first()->shipping_price;
-				} else if(count($havePriceInPostalCode) > 1) {
+				} else if (count($havePriceInPostalCode) > 1) {
 					//Encontrou mais que 1 resultado primeiro verificar se os preços são iguais
 					$priceT = $havePriceInPostalCode->first()->shipping_price;
 					$count = 0;
-					foreach($havePriceInPostalCode as $item){
-						if($item->shipping_price != $priceT){
+					foreach ($havePriceInPostalCode as $item) {
+						if ($item->shipping_price != $priceT) {
 							$count = 1;
 						}
 					}
-					
-					if($count == 0){
+
+					if ($count == 0) {
 						if (!$this->itemsPreventFreeShipping() && $havePriceInPostalCode->first()->shipping_offer == 1) {
 							$threshold = $havePriceInPostalCode->first()->value ?? null;
 						}
@@ -495,7 +509,7 @@ trait CheckoutFunctions
 						// Set some options - we are passing in a useragent too here
 						curl_setopt_array($curl, array(
 							CURLOPT_RETURNTRANSFER => 1,
-							CURLOPT_URL => 'http://codpostal.coolsis.pt/?codpostal1='.$postalCodeArr[0].'&codpostal2='.$postalCodeArr[1],
+							CURLOPT_URL => 'http://codpostal.coolsis.pt/?codpostal1=' . $postalCodeArr[0] . '&codpostal2=' . $postalCodeArr[1],
 						));
 						// Send the request & save response to $resp
 						$resp = curl_exec($curl);
@@ -504,12 +518,12 @@ trait CheckoutFunctions
 							$ret['localidade'] = $json_array[0]->localidade;
 							$ret['nome_concelho'] =  $json_array[0]->nome_concelho;
 							$ret['nome_distrito'] =  $json_array[0]->nome_distrito;
-							$havePriceInPostalCode = PostalCodeWhitelist::where('postalcode',$postalCodeArr[0])->whereRaw('LOWER(parish) = ?', [strtolower($json_array[0]->localidade)])->first();
-							if(isset($havePriceInPostalCode)){
+							$havePriceInPostalCode = PostalCodeWhitelist::where('postalcode', $postalCodeArr[0])->whereRaw('LOWER(parish) = ?', [strtolower($json_array[0]->localidade)])->first();
+							if (isset($havePriceInPostalCode)) {
 								if (!$this->itemsPreventFreeShipping() && $havePriceInPostalCode->shipping_offer == 1) {
 									$threshold = $havePriceInPostalCode->value ?? null;
 								}
-								$price= $havePriceInPostalCode->shipping_price;
+								$price = $havePriceInPostalCode->shipping_price;
 							}
 						} else {
 							throw new Exception('Este código postal não é valido para entrega ao domicilio');

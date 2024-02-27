@@ -7,8 +7,6 @@ namespace Vanilo\Cart\Models;
 use App\Models\Admin\Prescription;
 use Vanilo\Cart\Contracts\Cart as CartContract;
 use Vanilo\Contracts\Buyable;
-use App\Models\Admin\Product;
-use App\Rules\CartValidForCheckout;
 use Carbon\Carbon;
 use Vanilo\Cart\Models\CartItemProxy;
 use Illuminate\Contracts\Auth\Authenticatable;
@@ -26,6 +24,10 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Vanilo\Cart\Traits\CheckoutFunctions;
 use App\Classes\Utilities;
+use App\Rules\CartGiftsValidForCheckout;
+use App\Rules\CartItemsStockValidForCheckout;
+use App\Rules\CartItemsValidForCheckout;
+use Vanilo\Product\Models\ProductProxy;
 use Vanilo\Product\Models\ProductStateProxy;
 
 class Cart extends Model implements CartContract, Adjustable
@@ -136,18 +138,26 @@ class Cart extends Model implements CartContract, Adjustable
 				if (AdjustmentTypeProxy::IsVisualSeparator($adjustment->type)) {
 					if ($adjustment->type == AdjustmentTypeProxy::OFERTA_BARATO() || $adjustment->type == AdjustmentTypeProxy::OFERTA_PROD_IGUAL()) {
 						$free_item = clone $item;
-					} else if ($adjustment->type == AdjustmentTypeProxy::OFERTA_PROD()) {
-						$free_item = clone $item;
-						# Esta assim porque se formos buscar o produto direto nao temos model do cartitem e da erro a carregar o produto.
-						$free_item->setRelation('product', Product::where('sku', $adjustment->getData('sku'))->get()->first());
-					}
 
-					$free_quantity = $adjustment->getData('quantity');
-					if ($adjustment->type != AdjustmentTypeProxy::OFERTA_PROD_IGUAL() &&  $adjustment->type != AdjustmentTypeProxy::OFERTA_PROD()) {
-						$item->display_quantity -= $free_quantity;
+						$free_quantity = $adjustment->getData('quantity');
+						$free_item->display_quantity = $free_quantity;
+
+						if ($free_quantity != $item->quantity) {
+							array_push($items['free'], $free_item);
+						}
+					} else if ($adjustment->type == AdjustmentTypeProxy::OFERTA_PROD()) {
+						/* $free_item = clone $item;
+						# Esta assim porque se formos buscar o produto direto nao temos model do cartitem e da erro a carregar o produto.
+						$free_item->setRelation('product', Product::where('sku', $adjustment->getData('sku'))->get()->first()); */
+
+						$gifts = ProductProxy::withoutEvents(function () use ($adjustment) {
+							return ProductProxy::whereIn('id', $adjustment->getData('possible_gifts'))->hasStock()->get();
+						});
+
+						$item->nr_possible_gifts 	= $adjustment->getData('nr_possible_gifts');
+						$item->possible_gifts 		= $gifts;
+						$item->selected_gifts 		= $adjustment->getData('selected_gifts'); # $gifts->whereIn('id', $adjustment->getData('selected_gifts'));
 					}
-					$free_item->display_quantity = $free_quantity;
-					array_push($items['free'], $free_item);
 				}
 			}
 		}
@@ -610,8 +620,10 @@ class Cart extends Model implements CartContract, Adjustable
 
 	public function isValid()
 	{
-		$this->validator = Validator::make(['cart' => 1], [
-			'cart' => [new CartValidForCheckout($this)]
+		$this->validator = Validator::make(['items' => 1, 'stock' => 1, 'gifts' => 1], [
+			'items'	=> [new CartItemsValidForCheckout($this)],
+			'stock'	=> [new CartItemsStockValidForCheckout($this)],
+			'gifts'	=> [new CartGiftsValidForCheckout($this)]
 		], [], []);
 
 		return !$this->validator->fails();
