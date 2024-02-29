@@ -313,11 +313,6 @@ trait CheckoutFunctions
 			}
 		}
 
-		$this->updateShippingFee();
-		if (null !== $this->id) {
-			$this->updateFeePackagingBag();
-		}
-
 		if ($this->coupons->first()) {
 			$this->validateCoupon($this->coupons->first());
 
@@ -327,6 +322,11 @@ trait CheckoutFunctions
 				$this->activeCoupon = $this->coupons->first();
 				$this->updateCouponAdjustments($this->coupons->first());
 			}
+		}
+
+		$this->updateShippingFee();
+		if (null !== $this->id) {
+			$this->updateFeePackagingBag();
 		}
 
 		$this->updateClientCard();
