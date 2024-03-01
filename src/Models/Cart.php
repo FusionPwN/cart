@@ -181,7 +181,7 @@ class Cart extends Model implements CartContract, Adjustable
 		$errors = [];
 
 		if (!$product->isUnlimitedAvailability() && !$product->isLimitedAvailability()) {
-			if ((null !== $item && ($item->quantity + $qty > $product->getStock())) || ($qty > $product->getStock())) {
+			if ((null !== $item && ($qty > $item->quantity && $item->quantity + $qty > $product->getStock())) || ($qty > $product->getStock())) {
 				$qty = $product->getStock();
 				$errors[] = (object) ['type' => 'warning', 'message' => 'not-enough-stock'];
 			}
