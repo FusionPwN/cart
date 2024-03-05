@@ -436,8 +436,6 @@ trait CheckoutFunctions
 
 	public function updateShippingFee()
 	{
-		debug("Cart weight (before shipping) - " . $this->weight());
-
 		if (!isset($this->shipping) || !isset($this->selectedCountry)) {
 			return false;
 		}
@@ -542,8 +540,6 @@ trait CheckoutFunctions
 				}
 			}
 		}
-
-		debug("Cart weight (after shipping) - " . $this->weight($this->shipping, $this->shippingZone));
 
 		$this->removeAdjustment(null, AdjustmentTypeProxy::SHIPPING());
 		$shippingAdjustment = $this->adjustments()->create(new SimpleShippingFee($this->shipping, $price, $threshold));
