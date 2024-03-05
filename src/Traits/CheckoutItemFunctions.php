@@ -4,6 +4,8 @@ namespace Vanilo\Cart\Traits;
 
 use App\Models\Admin\Order;
 use App\Models\Admin\OrderItem;
+use App\Models\Admin\ShipmentMethod;
+use App\Models\Admin\ZoneGroup;
 use Exception;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
@@ -303,5 +305,10 @@ trait CheckoutItemFunctions
 		}
 
 		return $adjustments;
+	}
+
+	public function isElegibleForFreeShipping(?ShipmentMethod $shipmentMethod = null, ?ZoneGroup $zoneGroup = null): bool
+	{
+		return $this->product->isElegibleForFreeShipping($shipmentMethod, $zoneGroup);
 	}
 }

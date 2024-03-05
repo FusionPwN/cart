@@ -44,6 +44,7 @@ use Illuminate\Support\Facades\Cache;
 use Vanilo\Adjustments\Adjusters\FeePackagingBag;
 use Vanilo\Cart\Models\Cart;
 use App\Models\Admin\PostalCodeWhitelist;
+use App\Models\Admin\ZoneGroup;
 
 trait CheckoutFunctions
 {
@@ -58,6 +59,7 @@ trait CheckoutFunctions
 	public $validationErrors = [];
 
 	public ShipmentMethod $shipping;
+	public ZoneGroup $shippingZone;
 	public Country $selectedCountry;
 	public Card $card;
 
@@ -434,35 +436,41 @@ trait CheckoutFunctions
 
 	public function updateShippingFee()
 	{
+		debug("Cart weight (before shipping) - " . $this->weight());
+
 		if (!isset($this->shipping) || !isset($this->selectedCountry)) {
 			return false;
 		}
-
 
 		$price = $this->shipping->price ?? 0;
 		$threshold = null;
 
 		if ($this->shipping->usesWeight()) {
+			$this->shippingZone = $this->shipping->whereHasZonesAndCountry($this->selectedCountry)->first()->zones->first();
 
-			$shippingZone = $this->shipping->whereHasZonesAndCountry($this->selectedCountry)->first()->zones->first();
-
-			if (!isset($shippingZone) || !isset($shippingZone->pivot)) {
+			if (!isset($this->shippingZone) || !isset($this->shippingZone->pivot)) {
 				throw new Exception('Shipping method uses weights but no zone was found');
 			}
 
-			$shippingWeights = $this->shipping->weightIntervalThatFitsCart($this)->get();
+			$shippingWeights = $this->shipping
+				->weightIntervalThatFitsCart($this)
+				->get();
 
 			if (!isset($shippingWeights) && count($shippingWeights) == 0) {
 				throw new Exception('Shipping method uses weights but no weight was found');
 			}
 
-			if ((!isset($shippingZone->pivot->max_weight) || $shippingZone->pivot->max_weight == 0 || $this->weight() < $shippingZone->pivot->max_weight) && !$this->itemsPreventFreeShipping() && $shippingZone->pivot->shipping_offer == 1) {
-				$threshold = $shippingZone->pivot->min_value ?? null;
-			}
-
-			foreach ($shippingWeights as $shippingWeight) {
-				if ($shippingWeight->zone_group_id == $shippingZone->id) {
-					$price = $shippingWeight->price;
+			if ((!isset($this->shippingZone->pivot->max_weight) || $this->shippingZone->pivot->max_weight == 0 || $this->weight($this->shipping, $this->shippingZone) < $this->shippingZone->pivot->max_weight) && !$this->itemsPreventFreeShipping() && $this->subTotal() >= $this->shippingZone->pivot->min_value && $this->shippingZone->pivot->shipping_offer == 1) {
+				$threshold = $this->shippingZone->pivot->min_value ?? null;
+			} else {
+				if ($this->allItemsHaveFreeShipping($this->shipping, $this->shippingZone)) {
+					$threshold = 0;
+				} else {
+					foreach ($shippingWeights as $shippingWeight) {
+						if ($shippingWeight->zone_group_id == $this->shippingZone->id) {
+							$price = $shippingWeight->price;
+						}
+					}
 				}
 			}
 		} else if ($this->shipping->isHomeDelivery()) {
@@ -534,6 +542,8 @@ trait CheckoutFunctions
 				}
 			}
 		}
+
+		debug("Cart weight (after shipping) - " . $this->weight($this->shipping, $this->shippingZone));
 
 		$this->removeAdjustment(null, AdjustmentTypeProxy::SHIPPING());
 		$shippingAdjustment = $this->adjustments()->create(new SimpleShippingFee($this->shipping, $price, $threshold));
@@ -900,5 +910,19 @@ trait CheckoutFunctions
 		}
 
 		return abs($value);
+	}
+
+	public function allItemsHaveFreeShipping(?ShipmentMethod $shipmentMethod = null, ?ZoneGroup $zoneGroup = null): bool
+	{
+		$retval = true;
+
+		foreach ($this->items as $item) {
+			if (!$item->isElegibleForFreeShipping($shipmentMethod, $zoneGroup)) {
+				$retval = false;
+				break;
+			}
+		}
+
+		return $retval;
 	}
 }

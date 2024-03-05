@@ -11,6 +11,8 @@ use Vanilo\Adjustments\Adjusters\DirectDiscount;
 use Vanilo\Cart\Contracts\CartItem as CartItemContract;
 use Vanilo\Contracts\Buyable;
 use App\Models\Admin\Product;
+use App\Models\Admin\ShipmentMethod;
+use App\Models\Admin\ZoneGroup;
 use App\Models\Traits\ProductItem;
 use Exception;
 use Illuminate\Database\Eloquent\Builder;
@@ -57,9 +59,9 @@ class CartItem extends Model implements CartItemContract, Adjustable
 		$this->prices = $this->formattedPrice();
 	}
 
-	public function weight(): float
+	public function weight(?ShipmentMethod $shipmentMethod = null, ?ZoneGroup $zoneGroup = null): float
 	{
-		return (float) $this->product->net_weight * $this->quantity();
+		return (float) $this->product->weight($shipmentMethod, $zoneGroup) * $this->quantity();
 	}
 
 	public function product()

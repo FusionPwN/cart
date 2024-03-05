@@ -9,6 +9,7 @@ use App\Models\Admin\Card;
 use App\Models\Admin\Coupon;
 use App\Models\Admin\Prescription;
 use App\Models\Admin\ShipmentMethod;
+use App\Models\Admin\ZoneGroup;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Vanilo\Cart\Contracts\Cart as CartContract;
@@ -498,9 +499,9 @@ class CartManager implements CartManagerContract
 		return $this->exists() ? $this->model()->isValid() : false;
 	}
 
-	public function weight(): float
+	public function weight(?ShipmentMethod $shipmentMethod = null, ?ZoneGroup $zoneGroup = null): float
 	{
-		return $this->exists() ? $this->model()->weight() : 0;
+		return $this->exists() ? $this->model()->weight($shipmentMethod, $zoneGroup) : 0;
 	}
 
 	public function couponDiscount(): float

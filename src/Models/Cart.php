@@ -24,6 +24,8 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Vanilo\Cart\Traits\CheckoutFunctions;
 use App\Classes\Utilities;
+use App\Models\Admin\ShipmentMethod;
+use App\Models\Admin\ZoneGroup;
 use App\Rules\CartGiftsValidForCheckout;
 use App\Rules\CartItemsStockValidForCheckout;
 use App\Rules\CartItemsValidForCheckout;
@@ -421,10 +423,10 @@ class Cart extends Model implements CartContract, Adjustable
 		return $this->itemsTotal() + $this->adjustments()->total();
 	}
 
-	public function weight(): float
+	public function weight(?ShipmentMethod $shipmentMethod = null, ?ZoneGroup $zoneGroup = null): float
 	{
-		return (float) $this->items->sum(function ($item) {
-			return (float) $item->weight();
+		return (float) $this->items->sum(function ($item) use ($shipmentMethod, $zoneGroup) {
+			return (float) $item->weight($shipmentMethod, $zoneGroup);
 		});
 	}
 
