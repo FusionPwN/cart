@@ -181,16 +181,21 @@ class Cart extends Model implements CartContract, Adjustable
 		# 2.3 nao adiciona nao tem stock
 
 		$errors = [];
+		$itemQuantity = 0;
+
+		if(isset($item)) {
+			$itemQuantity = $item->quantity;
+		}
 
 		if (!$product->isUnlimitedAvailability() && !$product->isLimitedAvailability()) {
-			if ((null !== $item && ($qty > $item->quantity && $item->quantity + $qty > $product->getStock())) || ($qty > $product->getStock() || isset($item->quantity) ? $item->quantity:0 + $qty > $product->getStock()) ) {
+			if (null !== $item && (($qty > $itemQuantity && $itemQuantity + $qty > $product->getStock()) || ($qty > $product->getStock() || $itemQuantity + $qty > $product->getStock()))) {
 				$qty = $product->getStock();
 				$errors[] = (object) ['type' => 'warning', 'message' => 'not-enough-stock'];
 			}
 		}
 		if (isset($product->max_stock_cart) && $product->max_stock_cart > 0) {
-			if (null !== $item && $item->quantity + $qty > $product->max_stock_cart) {
-				$qty = abs($product->max_stock_cart - $item->quantity);
+			if (null !== $item && $itemQuantity + $qty > $product->max_stock_cart) {
+				$qty = abs($product->max_stock_cart - $itemQuantity);
 				$errors[] = (object) ['type' => 'warning', 'message' => 'max-quantity-reached'];
 			} else if (null === $item && $qty > $product->max_stock_cart) {
 				$qty = $product->max_stock_cart;
