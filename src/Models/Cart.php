@@ -612,7 +612,7 @@ class Cart extends Model implements CartContract, Adjustable
 		$out = collect();
 
 		foreach ($this->items as $item) {
-			if (!$item->product->isOnStock()) {
+			if (!$item->product->hasSuficientStock($item->quantity)) {
 				$out->add($item);
 			}
 		}
