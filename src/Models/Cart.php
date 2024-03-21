@@ -130,10 +130,26 @@ class Cart extends Model implements CartContract, Adjustable
 		foreach ($items['cart'] as &$item) {
 			$item->display_quantity = $item->quantity;
 
-			if ($out->where('product_id', $item->product_id)->count() > 0) {
-				$item->out_of_stock = true;
-			} else {
-				$item->out_of_stock = false;
+			$isOut = $out->where('product_id', $item->product_id)->first();
+			if (null !== $isOut) {
+				if ($isOut->out_of_stock) {
+					$item->out_of_stock = true;
+					$item->missing_units = false;
+				} else if ($isOut->missing_units) {
+					$item_to_update = $this->items->where('product_id', $item->product_id)->first();
+					if (null !== $item_to_update) {
+						$update_result = $this->setItemQty($item_to_update, 9999999999);
+						$item = $update_result->item;
+						$item->prices = $item->formattedPrice();
+						$item->display_quantity = $item->quantity;
+					}
+
+					$item->out_of_stock = false;
+					$item->missing_units = true;
+				} else {
+					$item->out_of_stock = false;
+					$item->missing_units = false;
+				}
 			}
 
 			foreach ($item->adjustments()->getIterator() as $adjustment) {
@@ -298,6 +314,11 @@ class Cart extends Model implements CartContract, Adjustable
 	 */
 	public function setItemQty($item, $qty = 1)
 	{
+		# remover estes campos vindos do getDisplayItems, quando a quantidade é forçada devido a falta de stock
+		$item->offsetUnset('missing_units');
+		$item->offsetUnset('out_of_stock');
+		$item->offsetUnset('display_quantity');
+
 		$qt = $qty;
 		$result = $this->checkAvailability($item->product, $item, $qt);
 		$qt = $result->quantity;
@@ -612,7 +633,11 @@ class Cart extends Model implements CartContract, Adjustable
 		$out = collect();
 
 		foreach ($this->items as $item) {
-			if (!$item->product->hasSuficientStock($item->quantity)) {
+			if (!$item->product->isOnStock()) {
+				$item->out_of_stock = true;
+				$out->add($item);
+			} else if (!$item->product->hasSuficientStock($item->quantity)) {
+				$item->missing_units = true;
 				$out->add($item);
 			}
 		}
