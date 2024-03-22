@@ -315,6 +315,8 @@ trait CheckoutFunctions
 			}
 		}
 
+		$this->updateShippingFee();//Está repetido pois se não calcular o shipping aqui o cupão de oferta de portes não funciona
+
 		if ($this->coupons->first()) {
 			$this->validateCoupon($this->coupons->first());
 
