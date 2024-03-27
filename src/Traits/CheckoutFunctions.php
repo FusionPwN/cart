@@ -315,7 +315,7 @@ trait CheckoutFunctions
 			}
 		}
 
-		$this->updateShippingFee();//Está repetido pois se não calcular o shipping aqui o cupão de oferta de portes não funciona
+		$this->updateShippingFee(); //Está repetido pois se não calcular o shipping aqui o cupão de oferta de portes não funciona
 
 		if ($this->coupons->first()) {
 			$this->validateCoupon($this->coupons->first());
@@ -444,6 +444,7 @@ trait CheckoutFunctions
 
 		$price = $this->shipping->price ?? 0;
 		$threshold = null;
+		$cause = null;
 
 		if ($this->shipping->usesWeight()) {
 			$this->shippingZone = $this->shipping->whereHasZonesAndCountry($this->selectedCountry)->first()->zones->first();
@@ -462,9 +463,11 @@ trait CheckoutFunctions
 
 			if ((!isset($this->shippingZone->pivot->max_weight) || $this->shippingZone->pivot->max_weight == 0 || $this->weight($this->shipping, $this->shippingZone) < $this->shippingZone->pivot->max_weight) && !$this->itemsPreventFreeShipping() && $this->subTotal() >= $this->shippingZone->pivot->min_value && $this->shippingZone->pivot->shipping_offer == 1) {
 				$threshold = $this->shippingZone->pivot->min_value ?? null;
+				$cause = 'order_value';
 			} else {
 				if ($this->allItemsHaveFreeShipping($this->shipping, $this->shippingZone)) {
 					$threshold = 0;
+					$cause = 'items';
 				} else {
 					foreach ($shippingWeights as $shippingWeight) {
 						if ($shippingWeight->zone_group_id == $this->shippingZone->id) {
@@ -479,6 +482,7 @@ trait CheckoutFunctions
 			if (count($havePriceInPostalCode) > 0) {
 				if (!$this->itemsPreventFreeShipping() && $havePriceInPostalCode->first()->shipping_offer == 1) {
 					$threshold = $havePriceInPostalCode->first()->value ?? null;
+					$cause = 'order_value';
 				}
 
 				$price = $havePriceInPostalCode->first()->shipping_price;
@@ -493,6 +497,7 @@ trait CheckoutFunctions
 				} else if (count($havePriceInPostalCode) == 1) {
 					if (!$this->itemsPreventFreeShipping() && $havePriceInPostalCode->first()->shipping_offer == 1) {
 						$threshold = $havePriceInPostalCode->first()->value ?? null;
+						$cause = 'order_value';
 					}
 					//Encontrou um resultado coloca o preço que está definido
 					$price = $havePriceInPostalCode->first()->shipping_price;
@@ -509,6 +514,7 @@ trait CheckoutFunctions
 					if ($count == 0) {
 						if (!$this->itemsPreventFreeShipping() && $havePriceInPostalCode->first()->shipping_offer == 1) {
 							$threshold = $havePriceInPostalCode->first()->value ?? null;
+							$cause = 'order_value';
 						}
 						$price = $priceT;
 					} else {
@@ -530,6 +536,7 @@ trait CheckoutFunctions
 							if (isset($havePriceInPostalCode)) {
 								if (!$this->itemsPreventFreeShipping() && $havePriceInPostalCode->shipping_offer == 1) {
 									$threshold = $havePriceInPostalCode->value ?? null;
+									$cause = 'order_value';
 								}
 								$price = $havePriceInPostalCode->shipping_price;
 							}
@@ -544,7 +551,7 @@ trait CheckoutFunctions
 		}
 
 		$this->removeAdjustment(null, AdjustmentTypeProxy::SHIPPING());
-		$shippingAdjustment = $this->adjustments()->create(new SimpleShippingFee($this->shipping, $price, $threshold));
+		$shippingAdjustment = $this->adjustments()->create(new SimpleShippingFee($this->shipping, $price, $threshold, $cause));
 
 		return $shippingAdjustment;
 	}
