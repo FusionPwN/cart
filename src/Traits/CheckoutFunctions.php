@@ -457,6 +457,12 @@ trait CheckoutFunctions
 				->weightIntervalThatFitsCart($this)
 				->get();
 
+			foreach ($shippingWeights as $shippingWeight) {
+				if ($shippingWeight->zone_group_id == $this->shippingZone->id) {
+					$price = $shippingWeight->price;
+				}
+			}
+
 			if (!isset($shippingWeights) && count($shippingWeights) == 0) {
 				throw new Exception('Shipping method uses weights but no weight was found');
 			}
@@ -468,12 +474,6 @@ trait CheckoutFunctions
 				if ($this->allItemsHaveFreeShipping($this->shipping, $this->shippingZone)) {
 					$threshold = 0;
 					$cause = 'items';
-				} else {
-					foreach ($shippingWeights as $shippingWeight) {
-						if ($shippingWeight->zone_group_id == $this->shippingZone->id) {
-							$price = $shippingWeight->price;
-						}
-					}
 				}
 			}
 		} else if ($this->shipping->isHomeDelivery()) {
