@@ -678,7 +678,13 @@ trait CheckoutFunctions
 
 		foreach ($parcels as $parcel) {
 			if ($parcel->total < 0) {
-				$total += ($parcel->total);
+				if($parcel->label != "Desconto de loja"){
+					$total += ($parcel->total);
+				} else {
+					if(Cache::get('settings.hide_store_discount') == 0){
+						$total += ($parcel->total);
+					}
+				}
 			}
 		}
 
