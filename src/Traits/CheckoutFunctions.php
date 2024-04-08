@@ -641,8 +641,7 @@ trait CheckoutFunctions
 		}
 	}
 
-
-	public function getAdjustmentsTotalsParcels(): object
+	public function getAdjustmentsTotalsParcels(bool $use_skip_conditions = false): object
 	{
 		$adjTypes = AdjustmentTypeProxy::choices();
 		$returnType = $adjTypes;
@@ -651,20 +650,34 @@ trait CheckoutFunctions
 			$const = Str::upper($key);
 			$label = $value;
 
-			$returnType[$key] = (object) [
-				'label' => $label,
-				'total' => $this->adjustments()->byType(AdjustmentTypeProxy::$const())->total()
-			];
+			if (!isset($returnType[$key]->type)) {
+				$returnType[$key] = (object) [
+					'label' => $label,
+					'type'	=> AdjustmentTypeProxy::$const()
+				];
+			}
+
+			$returnType[$key]->total = $this->adjustments()->byType(AdjustmentTypeProxy::$const())->total();
 		}
 
 		foreach ($this->items as $item) {
+			if ($use_skip_conditions && $item->product->hidesDiscountTags()) continue;
+
 			foreach ($adjTypes as $key => &$value) {
 				$const = Str::upper($key);
-				$label = $value;
-				$returnType[$key] = (object) [
-					'label' => $label,
-					'total' => $returnType[$key]->total + ($item->adjustments()->byType(AdjustmentTypeProxy::$const())->total())
-				];
+
+				if ($use_skip_conditions && AdjustmentTypeProxy::STORE_DISCOUNT()->equals(AdjustmentTypeProxy::$const()) && Cache::get('settings.hide_store_discount') == 1) continue;
+
+				$type_total = $item->adjustments()->byType(AdjustmentTypeProxy::$const())->total();
+				$returnType[$key]->total = $returnType[$key]->total + ($type_total);
+
+				if ($type_total != 0) {
+					if (!isset($returnType[$key]->items)) {
+						$returnType[$key]->items = [];
+					}
+
+					$returnType[$key]->items[] = $item;
+				}
 			}
 		}
 
@@ -674,17 +687,11 @@ trait CheckoutFunctions
 	public function getAdjustmentsDiscountTotal(): float
 	{
 		$total = 0;
-		$parcels = $this->getAdjustmentsTotalsParcels();
+		$parcels = $this->getAdjustmentsTotalsParcels(true);
 
 		foreach ($parcels as $parcel) {
 			if ($parcel->total < 0) {
-				if($parcel->label != "Desconto de loja"){
-					$total += ($parcel->total);
-				} else {
-					if(Cache::get('settings.hide_store_discount') == 0){
-						$total += ($parcel->total);
-					}
-				}
+				$total += ($parcel->total);
 			}
 		}
 
