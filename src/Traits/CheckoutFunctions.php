@@ -668,6 +668,8 @@ trait CheckoutFunctions
 
 				if ($use_skip_conditions && AdjustmentTypeProxy::STORE_DISCOUNT()->equals(AdjustmentTypeProxy::$const()) && Cache::get('settings.hide_store_discount') == 1) continue;
 
+				if ($use_skip_conditions && AdjustmentTypeProxy::DESCONTO_PERC_EURO()->equals(AdjustmentTypeProxy::$const()) && isset($item->product->validDiscountTree) && count($item->product->validDiscountTree) > 0 && $item->product->validDiscountTree->first()->hide_discount == 1) continue;
+
 				$type_total = $item->adjustments()->byType(AdjustmentTypeProxy::$const())->total();
 				$returnType[$key]->total = $returnType[$key]->total + ($type_total);
 
