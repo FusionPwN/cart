@@ -556,9 +556,19 @@ class Cart extends Model implements CartContract, Adjustable
 		return $result;
 	}
 
-	public function scopeAbandonded(Builder $query, ?int $since = 5, ?string $type = 'MINUTE', ?bool $grouped = false, ?string $orderby = 'ASC')
+	public static function Abandonded(?int $since = 5, ?string $type = 'MINUTE', ?bool $grouped = false, ?string $orderby = 'ASC')
 	{
-		$query->select(DB::raw("DATE_ADD(NOW(), INTERVAL -$since $type) AS since"), DB::raw('COUNT(*) AS count'))
+		/* $query->select(DB::raw("DATE(created_at) AS created_at"), DB::raw('COUNT(*) AS count'))
+			->where('state', CartStateProxy::ABANDONDED()->value())
+			->whereBetween('created_at', [DB::raw("DATE_ADD(NOW(), INTERVAL -$since $type)"), DB::raw('NOW()')]);
+
+		if ($grouped) {
+			$query->orderBy('created_at', $orderby)
+				->groupBy(DB::raw('DATE(created_at)'));
+		} */
+
+		$query = DB::table('carts')
+			->select(DB::raw("DATE(created_at) AS created_at"), DB::raw('COUNT(*) AS count'))
 			->where('state', CartStateProxy::ABANDONDED()->value())
 			->whereBetween('created_at', [DB::raw("DATE_ADD(NOW(), INTERVAL -$since $type)"), DB::raw('NOW()')]);
 
