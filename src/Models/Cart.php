@@ -298,17 +298,6 @@ class Cart extends Model implements CartContract, Adjustable
 		return $this->prescriptionItem->count() > 0 ? true : false;
 	}
 
-	public function hasMNSRM(): bool
-	{
-		foreach ($this->items as $item) {
-			if ($item->isMNSRM()) {
-				return true;
-			}
-		}
-
-		return false;
-	}
-
 	/**
 	 * @inheritDoc
 	 */

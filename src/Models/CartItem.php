@@ -75,11 +75,6 @@ class CartItem extends Model implements CartItemContract, Adjustable
 		return $this->hasOne(Prescription::class, 'id', 'product_id');
 	}
 
-	public function isMNSRM(): bool
-	{
-		return $this->product->isMNSRM() || $this->product->isMNSRMV();
-	}
-
 	/**
 	 * Property accessor alias to the total() method
 	 *

@@ -311,4 +311,9 @@ trait CheckoutItemFunctions
 	{
 		return $this->product->isElegibleForFreeShipping($shipmentMethod, $zoneGroup);
 	}
+
+	public function isMNSRM(): bool
+	{
+		return $this->product->isMNSRM() || $this->product->isMNSRMV();
+	}
 }

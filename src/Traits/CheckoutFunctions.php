@@ -945,4 +945,15 @@ trait CheckoutFunctions
 
 		return $retval;
 	}
+
+	public function hasMNSRM(): bool
+	{
+		foreach ($this->items as $item) {
+			if ($item->isMNSRM()) {
+				return true;
+			}
+		}
+
+		return false;
+	}
 }
