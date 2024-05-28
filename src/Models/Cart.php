@@ -63,9 +63,9 @@ class Cart extends Model implements CartContract, Adjustable
 		});
 	}
 
-	public function cartInit()
+	public function cartInit(bool $override_state = false)
 	{
-		if ($this->state->isLoading()) {
+		if ($this->state->isLoading() && !$override_state) {
 			return;
 		}
 
@@ -199,7 +199,7 @@ class Cart extends Model implements CartContract, Adjustable
 		$errors = [];
 		$itemQuantity = 0;
 
-		if(isset($item)) {
+		if (isset($item)) {
 			$itemQuantity = $item->quantity;
 		}
 

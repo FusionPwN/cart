@@ -45,6 +45,8 @@ use Vanilo\Adjustments\Adjusters\FeePackagingBag;
 use Vanilo\Cart\Models\Cart;
 use App\Models\Admin\PostalCodeWhitelist;
 use App\Models\Admin\ZoneGroup;
+use Vanilo\Adjustments\Adjusters\CouponFreeProduct;
+use Vanilo\Product\Models\ProductProxy;
 
 trait CheckoutFunctions
 {
@@ -770,6 +772,15 @@ trait CheckoutFunctions
 					$item->adjustments()->create(new CouponNum($this, $item, $coupon));
 				} else if ($coupon->type == CouponType::FREESHIPPING()) {
 					$this->adjustments()->create(new CouponFreeShipping($this, $coupon));
+					break;
+				} else if ($coupon->type == CouponType::FREEPRODUCT()) {
+					$adjustment = $this->adjustments()->create(new CouponFreeProduct($this, $coupon));
+					$this->activeCoupon->possible_gifts = ProductProxy::withoutEvents(function () use ($adjustment) {
+						return ProductProxy::whereIn('id', $adjustment->getData('possible_gifts'))->hasStock()->get();
+					});
+
+					$this->activeCoupon->selected_gifts = $adjustment->getData('selected_gifts');
+
 					break;
 				}
 			}
