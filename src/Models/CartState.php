@@ -46,6 +46,11 @@ class CartState extends Enum implements CartStateContract
 		return in_array($this->value, static::$loadingStates);
 	}
 
+    public function isAbandoned(): bool
+	{
+		return $this->value == static::ABANDONDED;
+	}
+
     /**
      * @inheritDoc
      */

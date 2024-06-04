@@ -337,7 +337,7 @@ trait CheckoutFunctions
 
 		$this->updateClientCard();
 
-		if ($this instanceof Cart) {
+		if ($this instanceof Cart && !$this->state->isAbandoned()) {
 			$this->resetState();
 		}
 

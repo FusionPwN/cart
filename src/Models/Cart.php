@@ -76,6 +76,10 @@ class Cart extends Model implements CartContract, Adjustable
 
 	public function setLoadingState()
 	{
+		if($this->state->isAbandoned()){
+			return;
+		}
+		
 		$this->state = CartStateProxy::LOADING();
 		$this->save();
 	}
