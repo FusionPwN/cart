@@ -789,6 +789,9 @@ trait CheckoutFunctions
 
 	public function removeCoupon()
 	{
+		session()->forget('checkout.coupon-selected_gifts');
+		session()->save();
+		
 		$this->removeCouponAdjustments();
 		if (count($this->coupons) > 0) {
 			$this->coupons()->sync([]);
