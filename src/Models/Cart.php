@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Vanilo\Cart\Models;
 
+use Illuminate\Support\Facades\App;
 use App\Models\Admin\Prescription;
 use Vanilo\Cart\Contracts\Cart as CartContract;
 use Vanilo\Contracts\Buyable;
@@ -26,6 +27,7 @@ use Vanilo\Cart\Traits\CheckoutFunctions;
 use App\Classes\Utilities;
 use App\Models\Admin\ShipmentMethod;
 use App\Models\Admin\ZoneGroup;
+use App\Modulos\Plural\PluralProvider;
 use App\Rules\CartGiftsValidForCheckout;
 use App\Rules\CartItemsStockValidForCheckout;
 use App\Rules\CartItemsValidForCheckout;
@@ -76,10 +78,10 @@ class Cart extends Model implements CartContract, Adjustable
 
 	public function setLoadingState()
 	{
-		if($this->state->isAbandoned()){
+		if ($this->state->isAbandoned()) {
 			return;
 		}
-		
+
 		$this->state = CartStateProxy::LOADING();
 		$this->save();
 	}
@@ -635,13 +637,29 @@ class Cart extends Model implements CartContract, Adjustable
 	{
 		$out = collect();
 
-		foreach ($this->items as $item) {
-			if (!$item->product->isOnStock()) {
-				$item->out_of_stock = true;
-				$out->add($item);
-			} else if (!$item->product->hasSuficientStock($item->quantity)) {
-				$item->missing_units = true;
-				$out->add($item);
+		if (config('plural.active', false) && (request()->routeIs('checkout.summary') || request()->routeIs('checkout.finish'))) {
+			$plural = App::make(PluralProvider::class);
+
+			$stocks = $plural->verifyStocks($this->items->pluck('product'));
+			foreach ($stocks as $key => $stock) {
+				$item = $this->items->where('product.plural.matnr', $key)->first();
+				if ($stock <= 0) {
+					$item->out_of_stock = true;
+					$out->add($item);
+				} else if ($stock < $item->quantity) {
+					$item->missing_units = true;
+					$out->add($item);
+				}
+			}
+		} else {
+			foreach ($this->items as $item) {
+				if (!$item->product->isOnStock()) {
+					$item->out_of_stock = true;
+					$out->add($item);
+				} else if (!$item->product->hasSuficientStock($item->quantity)) {
+					$item->missing_units = true;
+					$out->add($item);
+				}
 			}
 		}
 

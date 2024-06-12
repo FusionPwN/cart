@@ -324,6 +324,7 @@ trait CheckoutFunctions
 
 			if ($this->couponValidator->fails()) {
 				$this->activeCoupon = null;
+				$this->removeCoupon();
 			} else {
 				$this->activeCoupon = $this->coupons->first();
 				$this->updateCouponAdjustments($this->coupons->first());
@@ -791,7 +792,7 @@ trait CheckoutFunctions
 	{
 		session()->forget('checkout.coupon-selected_gifts');
 		session()->save();
-		
+
 		$this->removeCouponAdjustments();
 		if (count($this->coupons) > 0) {
 			$this->coupons()->sync([]);
