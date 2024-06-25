@@ -720,7 +720,7 @@ trait CheckoutFunctions
 
 		foreach ($this->applyableDiscounts as $discount) {
 			foreach ($discount['cart_items'] as $item) {
-				if (count($ids->where('product_id', $item->product->id)) > 0) {
+				if (count($ids->where('id', $item->product->id)) > 0) {
 					$bool = true;
 					break;
 				}
@@ -735,7 +735,7 @@ trait CheckoutFunctions
 		$bool = false;
 
 		foreach ($this->items as $item) {
-			if (count($ids->where('product_id', $item->product->id)) > 0 && $item->product->validDirectDiscount()) {
+			if (count($ids->where('id', $item->product->id)) > 0 && $item->product->validDirectDiscount()) {
 				$bool = true;
 				break;
 			}
