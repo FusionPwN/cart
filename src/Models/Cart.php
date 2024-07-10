@@ -643,12 +643,14 @@ class Cart extends Model implements CartContract, Adjustable
 			$stocks = $plural->verifyStocks($this->items->pluck('product'));
 			foreach ($stocks as $key => $stock) {
 				$item = $this->items->where('product.plural.matnr', $key)->first();
-				if ($stock <= 0) {
-					$item->out_of_stock = true;
-					$out->add($item);
-				} else if ($stock < $item->quantity) {
-					$item->missing_units = true;
-					$out->add($item);
+				if (null !== $item) {
+					if ($stock <= 0) {
+						$item->out_of_stock = true;
+						$out->add($item);
+					} else if ($stock < $item->quantity) {
+						$item->missing_units = true;
+						$out->add($item);
+					}
 				}
 			}
 		} else {
