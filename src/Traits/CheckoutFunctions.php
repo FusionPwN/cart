@@ -812,7 +812,7 @@ trait CheckoutFunctions
 			new IsUserAllowed($coupon, $this, $user),
 			new OrderHasMinValue($coupon, $this),
 			new CanBeUsedWithDiscounts($coupon, $this),
-			#new CanBeUsedWithProducts($coupon, $this)
+			new CanBeUsedWithProducts($coupon, $this)
 		];
 
 		if ($coupon->type == CouponType::FREESHIPPING()) {
