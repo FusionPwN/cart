@@ -387,6 +387,15 @@ class CartManager implements CartManagerContract
 			];
 		}
 
+		if(isset($attributes))
+		{
+			$attributes['lang'] = app()->getLocale();
+		} else {
+			$attributes = [
+				'lang' => app()->getLocale()
+			];
+		}
+
 		return $this->setCartModel(CartProxy::create($attributes ?? []));
 	}
 
