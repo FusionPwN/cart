@@ -18,11 +18,11 @@ use Vanilo\Cart\Contracts\CartState as CartStateContract;
 
 class CartState extends Enum implements CartStateContract
 {
-    public const __DEFAULT = self::ACTIVE;
-    public const ACTIVE = 'active';
-    public const CHECKOUT = 'checkout';
-	public const LOADING = 'in_use';
-    public const COMPLETED = 'completed';
+    public const __DEFAULT 	= self::ACTIVE;
+    public const ACTIVE 	= 'active';
+    public const CHECKOUT 	= 'checkout';
+	public const LOADING 	= 'in_use';
+    public const COMPLETED 	= 'completed';
     public const ABANDONDED = 'abandoned';
 
     protected static $labels = [];
@@ -70,11 +70,11 @@ class CartState extends Enum implements CartStateContract
     protected static function boot()
     {
         static::$labels = [
-            self::ACTIVE => __('Active'),
-            self::CHECKOUT => __('Checkout'),
-			self::LOADING => __('In Use'),
-            self::COMPLETED => __('Completed'),
-            self::ABANDONDED => __('Abandoned')
+            self::ACTIVE 		=> __('backoffice.cart.state.Active'),
+            self::CHECKOUT 		=> __('backoffice.cart.state.Checkout'),
+			self::LOADING 		=> __('backoffice.cart.state.In Use'),
+            self::COMPLETED 	=> __('backoffice.cart.state.Completed'),
+            self::ABANDONDED 	=> __('backoffice.cart.state.Abandoned')
         ];
     }
 }
