@@ -302,7 +302,7 @@ trait CheckoutFunctions
 						break; # break pq este desconto só vai ser aplicado 1x
 					} else if ($discount['tag'] == 'oferta_percentagem') {
 						for ($i = 0; $i < $item->quantity; $i++) {
-							$item->adjustments()->create(new DiscountScalablePercNum($this, $item, $discount_data, $level_list[$level_list_count]['level']));
+							$this->adjustments()->create(new DiscountScalablePercNum($this, $item, $discount_data, $level_list[$level_list_count]['level']));
 							$level_list_count++;
 						}
 					}
