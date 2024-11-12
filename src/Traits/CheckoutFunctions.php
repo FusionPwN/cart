@@ -12,6 +12,7 @@ use App\Models\Admin\ShipmentMethod;
 use App\Rules\Coupon\CanBeUsedInZone;
 use App\Rules\Coupon\CanBeUsedWithDiscounts;
 use App\Rules\Coupon\CanBeUsedWithProducts;
+use App\Rules\Coupon\CanBeUsedWithMedicines;
 use App\Rules\Coupon\HasUsesLeft;
 use App\Rules\Coupon\IsCouponActive;
 use App\Rules\Coupon\IsCouponExpired;
