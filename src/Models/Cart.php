@@ -166,6 +166,10 @@ class Cart extends Model implements CartContract, Adjustable
 						$free_quantity = $adjustment->getData('quantity');
 						$free_item->display_quantity = $free_quantity;
 
+						if ($adjustment->type == AdjustmentTypeProxy::OFERTA_BARATO()) {
+							$item->display_quantity = $item->quantity - $free_quantity;
+						}
+
 						if ($free_quantity != $item->quantity) {
 							array_push($items['free'], $free_item);
 						}
