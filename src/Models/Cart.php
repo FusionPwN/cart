@@ -25,6 +25,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Vanilo\Cart\Traits\CheckoutFunctions;
 use App\Classes\Utilities;
+use App\Models\Admin\Lists;
 use App\Models\Admin\ShipmentMethod;
 use App\Models\Admin\ZoneGroup;
 use App\Modulos\Plural\PluralProvider;
@@ -227,6 +228,38 @@ class Cart extends Model implements CartContract, Adjustable
 			} else if (null === $item && $qty > $product->max_stock_cart) {
 				$qty = $product->max_stock_cart;
 				$errors[] = (object) ['type' => 'warning', 'message' => 'max-quantity-reached'];
+			}
+		}
+
+		if(session()->has('list_code'))
+		{
+			$list = Lists::where('code',session()->get('list_code'))->first();
+
+			$productQtd = $list->linkable->products()
+			->wherePivot('product_id', $product->id)
+			->first()->pivot->quantity;
+
+			$purchasedQuantity = $list->orders()
+			->whereHas('items', function ($query) use ($product) {
+				$query->where('product_id', $product->id);
+			})->with('items')
+			->get()
+			->flatMap(function ($order) {
+				return $order->items;
+			})
+			->where('product_id', $product->id)
+			->sum('quantity');
+
+			$productQtd = $list->calculateAvailableQuantity($product->id);
+			
+			if (isset($productQtd) && $productQtd > 0) {
+				if (null !== $item && $itemQuantity + $qty > $productQtd) {
+					$qty = $productQtd;
+					$errors[] = (object) ['type' => 'warning', 'message' => 'max-quantity-reached'];
+				} else if (null === $item && $qty > $productQtd) {
+					$qty = $productQtd;
+					$errors[] = (object) ['type' => 'warning', 'message' => 'max-quantity-reached'];
+				}
 			}
 		}
 
@@ -659,6 +692,10 @@ class Cart extends Model implements CartContract, Adjustable
 				}
 			}
 		} else {
+			if(session()->has('list_code'))
+			{
+				$list = Lists::where('code',session()->get('list_code'))->first();
+			}
 			foreach ($this->items as $item) {
 				if (!$item->product->isOnStock()) {
 					$item->out_of_stock = true;
@@ -666,6 +703,24 @@ class Cart extends Model implements CartContract, Adjustable
 				} else if (!$item->product->hasSuficientStock($item->quantity)) {
 					$item->missing_units = true;
 					$out->add($item);
+				}
+
+				if(session()->has('list_code'))
+				{
+					// Obtém a quantidade disponível do produto
+					$productAvailableQuantity = $list->calculateAvailableQuantity($item->product_id);
+			
+					// Verifica se a quantidade do item excede a disponível
+					if ($item->quantity > $productAvailableQuantity) {
+						if($productAvailableQuantity == 0)
+						{
+							$item->out_of_stock = true;
+							$out->add($item);
+						} else {
+							$item->missing_units = true;
+							$out->add($item);
+						}
+					}
 				}
 			}
 		}
