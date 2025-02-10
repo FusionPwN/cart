@@ -475,9 +475,21 @@ trait CheckoutFunctions
 				$threshold = $this->shippingZone->pivot->min_value ?? null;
 				$cause = 'order_value';
 			} else {
-				if ($this->allItemsHaveFreeShipping($this->shipping, $this->shippingZone)) {
-					$threshold = 0;
-					$cause = 'items';
+				if(isset($this->shippingZone->pivot->max_weight_optional) || isset($this->shippingZone->pivot->min_value_optional)){
+					if ((!isset($this->shippingZone->pivot->max_weight_optional) || $this->shippingZone->pivot->max_weight_optional == 0 || $this->weight($this->shipping, $this->shippingZone) < $this->shippingZone->pivot->max_weight_optional) && !$this->itemsPreventFreeShipping() && $this->subTotal() >= $this->shippingZone->pivot->min_value_optional && $this->shippingZone->pivot->shipping_offer == 1) {
+						$threshold = $this->shippingZone->pivot->min_value_optional ?? null;
+						$cause = 'order_value';
+					} else {
+						if ($this->allItemsHaveFreeShipping($this->shipping, $this->shippingZone)) {
+							$threshold = 0;
+							$cause = 'items';
+						}
+					}
+				} else {
+					if ($this->allItemsHaveFreeShipping($this->shipping, $this->shippingZone)) {
+						$threshold = 0;
+						$cause = 'items';
+					}
 				}
 			}
 		} else if ($this->shipping->isHomeDelivery()) {
