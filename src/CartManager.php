@@ -22,6 +22,7 @@ use Vanilo\Adjustments\Contracts\AdjustmentType;
 use Vanilo\Adjustments\Models\Adjustment;
 use Vanilo\Cart\Models\CartProxy;
 use Vanilo\Contracts\Buyable;
+use Vanilo\Framework\Models\PaymentMethod;
 
 class CartManager implements CartManagerContract
 {
@@ -428,6 +429,11 @@ class CartManager implements CartManagerContract
 		return $this->model()->setShipping($shipping);
 	}
 
+	public function setPayment(PaymentMethod $payment)
+	{
+		return $this->model()->setPayment($payment);
+	}
+
 	public function setCard(Card $card)
 	{
 		return $this->model()->setCard($card);
@@ -466,6 +472,11 @@ class CartManager implements CartManagerContract
 	public function getClientCardAdjustment(): ?Adjustment
 	{
 		return $this->model()->getClientCardAdjustment();
+	}
+
+	public function getPaymentAdjustment(): ?Adjustment
+	{
+		return $this->exists() ? $this->model()->getPaymentAdjustment() : null;
 	}
 
 	public function applyCoupon(Coupon $coupon)

@@ -47,6 +47,8 @@ use Vanilo\Cart\Models\Cart;
 use App\Models\Admin\PostalCodeWhitelist;
 use App\Models\Admin\ZoneGroup;
 use Vanilo\Adjustments\Adjusters\CouponFreeProduct;
+use Vanilo\Adjustments\Adjusters\SimplePaymentFee;
+use Vanilo\Payment\Models\PaymentMethod;
 use Vanilo\Product\Models\ProductProxy;
 
 trait CheckoutFunctions
@@ -65,6 +67,7 @@ trait CheckoutFunctions
 	public ZoneGroup $shippingZone;
 	public Country $selectedCountry;
 	public Card $card;
+	public PaymentMethod $payment;
 
 	public function coupons()
 	{
@@ -336,7 +339,7 @@ trait CheckoutFunctions
 		if (null !== $this->id) {
 			$this->updateFeePackagingBag();
 		}
-
+		$this->updatePaymentFee();
 		$this->updateClientCard();
 
 		if ($this instanceof Cart && !$this->state->isAbandoned()) {
@@ -410,6 +413,11 @@ trait CheckoutFunctions
 	public function setShipping(ShipmentMethod $shipping)
 	{
 		$this->shipping = $shipping;
+	}
+
+	public function setPayment(PaymentMethod $payment)
+	{
+		$this->payment = $payment;
 	}
 
 	public function setCard(Card $card)
@@ -587,6 +595,22 @@ trait CheckoutFunctions
 		return $clientCardAdjustment;
 	}
 
+	public function updatePaymentFee()
+	{
+		if(!isset($this->payment))
+		{
+			return false;
+		}
+
+		$fee = $this->payment->fee ?? 0;
+
+		$this->removeAdjustment(null, AdjustmentTypeProxy::PAYMENT_FEE());
+
+		$paymentAdjustment = $this->adjustments()->create(new SimplePaymentFee($this->payment, $fee));
+		
+		return $paymentAdjustment;
+	}
+
 	public function updateFeePackagingBag()
 	{
 		if (Cache::get('settings.checkout_packaging_of_the_order') !== null && Cache::get('settings.checkout_packaging_of_the_order') != "") {
@@ -632,6 +656,17 @@ trait CheckoutFunctions
 		}
 
 		return $clientCardAdjustment;
+	}
+
+	public function getPaymentAdjustment(): ?Adjustment
+	{
+		$paymentAdjustment = $this->getAdjustmentByType(AdjustmentTypeProxy::PAYMENT_FEE());
+
+		if (null !== $paymentAdjustment) {
+			$paymentAdjustment->display_amount = $paymentAdjustment->getAmount();
+		}
+
+		return $paymentAdjustment;
 	}
 
 	public function getFeePackagingBagAdjustment(): ?Adjustment
@@ -874,6 +909,19 @@ trait CheckoutFunctions
 		}
 	}
 
+	public function payment(): float
+	{
+		if ($this instanceof Order) {
+			if ($this->isEditable()) {
+				return $this->paymentValue();
+			} else {
+				return (float) $this->payment_fee;
+			}
+		} else if ($this instanceof Cart) {
+			return $this->paymentValue();
+		}
+	}
+
 	public function feePackagingBag(): float
 	{
 		if ($this instanceof Order) {
@@ -891,6 +939,12 @@ trait CheckoutFunctions
 	{
 		$shippingAdjustment = $this->getShippingAdjustment();
 		return isset($shippingAdjustment) ? $shippingAdjustment->getAmount() : 0;
+	}
+
+	protected function paymentValue(): float
+	{
+		$paymentAdjustment= $this->getPaymentAdjustment();
+		return isset($paymentAdjustment) ? $paymentAdjustment->getAmount() : 0;
 	}
 
 	protected function feePackagingBagValue(): float
@@ -927,7 +981,7 @@ trait CheckoutFunctions
 
 	public function subTotal()
 	{
-		return $this->total() - $this->shipping() - $this->feePackagingBag();
+		return $this->total() - $this->shipping() - $this->feePackagingBag() - $this->payment();
 	}
 
 	/**
