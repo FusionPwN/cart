@@ -46,6 +46,7 @@ use Vanilo\Adjustments\Adjusters\FeePackagingBag;
 use Vanilo\Cart\Models\Cart;
 use App\Models\Admin\PostalCodeWhitelist;
 use App\Models\Admin\ZoneGroup;
+use Vanilo\Adjustments\Adjusters\CouponFreebieOffer;
 use Vanilo\Adjustments\Adjusters\CouponFreeProduct;
 use Vanilo\Adjustments\Adjusters\SimplePaymentFee;
 use Vanilo\Payment\Models\PaymentMethod;
@@ -829,6 +830,10 @@ trait CheckoutFunctions
 					});
 
 					$this->activeCoupon->selected_gifts = $adjustment->getData('selected_gifts');
+
+					break;
+				} else if ($coupon->type == CouponType::FREEBIEOFFER()) {
+					$this->adjustments()->create(new CouponFreebieOffer($this, $coupon));
 
 					break;
 				}
