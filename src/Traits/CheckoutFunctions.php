@@ -217,29 +217,13 @@ trait CheckoutFunctions
 		return $conflictingDiscounts;
 	}
 
-	public function updateAdjustments()
+	public function unfoldCartItemsForDiscounts()
 	{
-		debug('STARTING ADJUSTMENT UPDATES');
-		$this->removeCouponAdjustments();
-		$this->removeAllAdjustments();
-
-		foreach ($this->items as $item) {
-			$item->removeAllAdjustments();
-
-			if ($this instanceof Order && $item->overridesPrice()) {
-				#keep empty
-			} else {
-				$item->updateIntervalAdjustments($this);
-				$item->updateDirectDiscountAdjustments($this);
-			}
-		}
-
 		foreach ($this->applyableDiscounts as $discount) {
 			$discount_data = $discount['discount_data'];
 			$item_count = $discount['cart_items']->sum('quantity');
 
 			if ($discount['tag'] == 'oferta_percentagem') {
-				$level_list_count = 0;
 				$level_count = 0;
 				$level_list = [];
 
@@ -264,8 +248,114 @@ trait CheckoutFunctions
 					}
 				}
 
-				$level_list = collect($level_list)->sortBy('value')->values();
-			} else if ($discount['tag'] == 'oferta_barato' || $discount['tag'] == 'oferta_prod') {
+				$level_list = collect($level_list)->sortBy('value')->values()->all();
+				$level_list_count = 0;
+
+				foreach ($discount['cart_items'] as $item) {
+					if ($this instanceof Order && $item->overridesPrice()) {
+					} else {
+						if ($discount['tag'] == 'oferta_percentagem') {
+							for ($i = 0; $i < $item->quantity; $i++) {
+								$level_list[$level_list_count]['product_id'] = $item->product_id;
+
+								$level_list_count++;
+							}
+						}
+					}
+				}
+
+				$unfolded_lines = collect($level_list)
+					->groupBy('level') // Group by 'level'
+					->flatMap(function ($items, $level) {
+						return $items->groupBy('product_id') // Group by 'product_id'
+							->map(function ($productItems, $product_id) use ($level) {
+								return [
+									'product_id' => $product_id,
+									'quantity' => $productItems->count(), // Count occurrences of each product_id
+									'level' => $level,
+								];
+							});
+					})
+					->values();
+
+				$treated = [];
+				foreach ($unfolded_lines as $line) {
+					$fake = false;
+
+					if (!in_array($line['product_id'], $treated)) {
+						$treated[] = $line['product_id'];
+
+						$items = $this->items->where('product_id', $line['product_id']);
+						$item = $items->first();
+						$unfolded_count = $unfolded_lines->where('product_id', $line['product_id'])->count();
+
+						if ($unfolded_count > 1) {
+							for ($i = 0; $i < $unfolded_count; $i++) {
+								$l = $unfolded_lines->where('product_id', $line['product_id'])->values()[$i];
+
+								$new_item = $item->replicate();
+								$new_item->relations = [];
+								$new_item->quantity = $l['quantity'];
+								$new_item->properties = [
+									'discount_id' 		=> $discount_data->id,
+									'discount_name' 	=> $discount_data->name,
+									'discount_level' 	=> $l['level'],
+									'old_item_id' 		=> $item->id,
+									'fake'				=> $fake,
+								];
+
+								$new_item->push();
+								$fake = true;
+							}
+						} else {
+							$new_item = $item->replicate();
+							$new_item->relations = [];
+							$new_item->quantity = $line['quantity'];
+							$new_item->properties = [
+								'discount_id' 		=> $discount_data->id,
+								'discount_name' 	=> $discount_data->name,
+								'discount_level' 	=> $line['level'],
+								'old_item_id' 		=> $item->id,
+								'fake'				=> false,
+							];
+
+							$new_item->push();
+						}
+
+						foreach ($items as $item) {
+							$item->removeAllAdjustments();
+							$item->delete();
+						}
+					}
+				}
+
+				$this->load('items');
+			}
+		}
+	}
+
+	public function updateAdjustments()
+	{
+		debug('STARTING ADJUSTMENT UPDATES');
+		$this->removeCouponAdjustments();
+		$this->removeAllAdjustments();
+
+		foreach ($this->items as $item) {
+			$item->removeAllAdjustments();
+
+			if ($this instanceof Order && $item->overridesPrice()) {
+				#keep empty
+			} else {
+				$item->updateIntervalAdjustments($this);
+				$item->updateDirectDiscountAdjustments($this);
+			}
+		}
+
+		foreach ($this->applyableDiscounts as $discount) {
+			$discount_data = $discount['discount_data'];
+			$item_count = $discount['cart_items']->sum('quantity');
+
+			if ($discount['tag'] == 'oferta_barato' || $discount['tag'] == 'oferta_prod') {
 				$remainder = $item_count % $discount_data->purchase_number;
 				$free_quantity = (($item_count - $remainder) / $discount_data->purchase_number) * $discount_data->offer_number;
 
@@ -306,10 +396,7 @@ trait CheckoutFunctions
 						$item->adjustments()->create(new DiscountFree($this, $discount_data, $free_quantity));
 						break; # break pq este desconto só vai ser aplicado 1x
 					} else if ($discount['tag'] == 'oferta_percentagem') {
-						for ($i = 0; $i < $item->quantity; $i++) {
-							$this->adjustments()->create(new DiscountScalablePercNum($this, $item, $discount_data, $level_list[$level_list_count]['level']));
-							$level_list_count++;
-						}
+						$item->adjustments()->create(new DiscountScalablePercNum($this, $item, $discount_data, $item->properties->discount_level, $item->quantity));
 					}
 				}
 			}
@@ -484,7 +571,7 @@ trait CheckoutFunctions
 				$threshold = $this->shippingZone->pivot->min_value ?? null;
 				$cause = 'order_value';
 			} else {
-				if(isset($this->shippingZone->pivot->max_weight_optional) || isset($this->shippingZone->pivot->min_value_optional)){
+				if (isset($this->shippingZone->pivot->max_weight_optional) || isset($this->shippingZone->pivot->min_value_optional)) {
 					if ((!isset($this->shippingZone->pivot->max_weight_optional) || $this->shippingZone->pivot->max_weight_optional == 0 || $this->weight($this->shipping, $this->shippingZone) < $this->shippingZone->pivot->max_weight_optional) && !$this->itemsPreventFreeShipping() && $this->subTotal() >= $this->shippingZone->pivot->min_value_optional && $this->shippingZone->pivot->shipping_offer == 1) {
 						$threshold = $this->shippingZone->pivot->min_value_optional ?? null;
 						$cause = 'order_value';
@@ -598,8 +685,7 @@ trait CheckoutFunctions
 
 	public function updatePaymentFee()
 	{
-		if(!isset($this->payment))
-		{
+		if (!isset($this->payment)) {
 			return false;
 		}
 
@@ -608,7 +694,7 @@ trait CheckoutFunctions
 		$this->removeAdjustment(null, AdjustmentTypeProxy::PAYMENT_FEE());
 
 		$paymentAdjustment = $this->adjustments()->create(new SimplePaymentFee($this->payment, $fee));
-		
+
 		return $paymentAdjustment;
 	}
 
@@ -709,6 +795,7 @@ trait CheckoutFunctions
 				];
 			}
 
+			$returnType[$key]->title = $this->adjustments()->byType(AdjustmentTypeProxy::$const())->first()->title ?? null;
 			$returnType[$key]->total = $this->adjustments()->byType(AdjustmentTypeProxy::$const())->total();
 		}
 
@@ -719,10 +806,10 @@ trait CheckoutFunctions
 				$const = Str::upper($key);
 
 				if ($use_skip_conditions && AdjustmentTypeProxy::STORE_DISCOUNT()->equals(AdjustmentTypeProxy::$const()) && Cache::get('settings.hide_store_discount') == 1) continue;
-
 				if ($use_skip_conditions && AdjustmentTypeProxy::DESCONTO_PERC_EURO()->equals(AdjustmentTypeProxy::$const()) && isset($item->product->validDiscountTree) && count($item->product->validDiscountTree) > 0 && $item->product->validDiscountTree->first()->hide_discount == 1) continue;
 
 				$type_total = $item->adjustments()->byType(AdjustmentTypeProxy::$const())->total();
+				$returnType[$key]->title = $item->adjustments()->byType(AdjustmentTypeProxy::$const())->first()->title ?? null;
 				$returnType[$key]->total = $returnType[$key]->total + ($type_total);
 
 				if ($type_total != 0) {
@@ -948,7 +1035,7 @@ trait CheckoutFunctions
 
 	protected function paymentValue(): float
 	{
-		$paymentAdjustment= $this->getPaymentAdjustment();
+		$paymentAdjustment = $this->getPaymentAdjustment();
 		return isset($paymentAdjustment) ? $paymentAdjustment->getAmount() : 0;
 	}
 
@@ -973,7 +1060,7 @@ trait CheckoutFunctions
 
 	protected function totalValue(): float
 	{
-		$total = $this->itemsTotal() + $this->adjustments()->total();
+		$total = $this->itemsTotal() + $this->adjustments()->total(/* [AdjustmentTypeProxy::OFERTA_PERCENTAGEM()->value()] */);
 
 		$clientCardAdjustment = $this->adjustments()->byType(AdjustmentTypeProxy::CLIENT_CARD())->first();
 
@@ -986,7 +1073,13 @@ trait CheckoutFunctions
 
 	public function subTotal()
 	{
-		return $this->total() - $this->shipping() - $this->feePackagingBag() - $this->payment();
+		#return $this->total() - $this->shipping() - $this->feePackagingBag() - $this->payment();
+
+		if ($this instanceof Cart) {
+			return (float) $this->items->sum('price_vat');
+		} else if ($this instanceof Order) {
+			return $this->items->sum('original_price');
+		}
 	}
 
 	/**

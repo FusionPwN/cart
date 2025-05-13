@@ -68,11 +68,11 @@ class Cart extends Model implements CartContract, Adjustable
 
 	public function cartInit(bool $override_state = false)
 	{
-		if ($this->state->isLoading() && !$override_state) {
-			return;
+		$this->buildCartGlobals();
+		if ($this->state->isRequiresUpdate()) {
+			$this->resetState();
+			$this->unfoldCartItemsForDiscounts();
 		}
-
-		$this->setLoadingState();
 		$this->buildCartGlobals();
 		$this->updateAdjustments();
 	}
@@ -84,6 +84,16 @@ class Cart extends Model implements CartContract, Adjustable
 		}
 
 		$this->state = CartStateProxy::LOADING();
+		$this->save();
+	}
+
+	public function setRequiresUpdateState()
+	{
+		if ($this->state->isRequiresUpdate()) {
+			return;
+		}
+
+		$this->state = CartStateProxy::REQUIRES_UPDATE();
 		$this->save();
 	}
 
@@ -127,6 +137,8 @@ class Cart extends Model implements CartContract, Adjustable
 	 */
 	public function getItemsDisplay(): Collection
 	{
+		$this->load('items');
+
 		$items = [
 			'cart' => clone $this->items,
 			'free' => []
@@ -135,7 +147,14 @@ class Cart extends Model implements CartContract, Adjustable
 		$out = $this->outOfStockItems();
 
 		foreach ($items['cart'] as &$item) {
+			$item->prices = $item->formattedPrice(); # refreshes the price attribute
 			$item->display_quantity = $item->quantity;
+
+			if ($item->properties->fake) {
+				$item->can_change_quantity = false;
+			} else {
+				$item->can_change_quantity = true;
+			}
 
 			$isOut = $out->where('product_id', $item->product_id)->first();
 			if (null !== $isOut) {
@@ -231,27 +250,26 @@ class Cart extends Model implements CartContract, Adjustable
 			}
 		}
 
-		if(session()->has('list_code'))
-		{
-			$list = Lists::where('code',session()->get('list_code'))->first();
+		if (session()->has('list_code')) {
+			$list = Lists::where('code', session()->get('list_code'))->first();
 
 			$productQtd = $list->linkable->products()
-			->wherePivot('product_id', $product->id)
-			->first()->pivot->quantity;
+				->wherePivot('product_id', $product->id)
+				->first()->pivot->quantity;
 
 			$purchasedQuantity = $list->orders()
-			->whereHas('items', function ($query) use ($product) {
-				$query->where('product_id', $product->id);
-			})->with('items')
-			->get()
-			->flatMap(function ($order) {
-				return $order->items;
-			})
-			->where('product_id', $product->id)
-			->sum('quantity');
+				->whereHas('items', function ($query) use ($product) {
+					$query->where('product_id', $product->id);
+				})->with('items')
+				->get()
+				->flatMap(function ($order) {
+					return $order->items;
+				})
+				->where('product_id', $product->id)
+				->sum('quantity');
 
 			$productQtd = $list->calculateAvailableQuantity($product->id);
-			
+
 			if (isset($productQtd) && $productQtd > 0) {
 				if (null !== $item && $itemQuantity + $qty > $productQtd) {
 					$qty = $productQtd;
@@ -303,9 +321,7 @@ class Cart extends Model implements CartContract, Adjustable
 				);
 			}
 
-			$this->load('items');
-			$this->refresh();
-			$this->cartInit();
+			$this->setRequiresUpdateState();
 
 			return (object) [
 				'errors'	=> $result->errors,
@@ -370,9 +386,7 @@ class Cart extends Model implements CartContract, Adjustable
 			}
 		}
 
-		$this->load('items');
-		$this->refresh();
-		$this->cartInit();
+		$this->setRequiresUpdateState();
 
 		return (object) [
 			'errors'	=> $result->errors,
@@ -391,9 +405,7 @@ class Cart extends Model implements CartContract, Adjustable
 			$item->delete();
 		}
 
-		$this->load('items');
-		$this->refresh();
-		$this->cartInit();
+		$this->setRequiresUpdateState();
 	}
 
 	/**
@@ -401,9 +413,13 @@ class Cart extends Model implements CartContract, Adjustable
 	 */
 	public function removeProduct(Buyable $product)
 	{
-		$item = $this->items()->ofCart($this)->byProduct($product)->first();
+		$items = $this->items()->ofCart($this)->byProduct($product)->get();
 
-		$this->removeItem($item);
+		foreach ($items as $item) {
+			$this->removeItem($item);
+		}
+
+		$this->setRequiresUpdateState();
 	}
 
 	/**
@@ -419,7 +435,7 @@ class Cart extends Model implements CartContract, Adjustable
 		# funçao original (nao elimina os adjustments dos items)
 		#$this->items()->ofCart($this)->delete();
 
-		$this->load('items');
+		$this->setRequiresUpdateState();
 	}
 
 	public function buildCartGlobals()
@@ -692,9 +708,8 @@ class Cart extends Model implements CartContract, Adjustable
 				}
 			}
 		} else {
-			if(session()->has('list_code'))
-			{
-				$list = Lists::where('code',session()->get('list_code'))->first();
+			if (session()->has('list_code')) {
+				$list = Lists::where('code', session()->get('list_code'))->first();
 			}
 			foreach ($this->items as $item) {
 				if (!$item->product->isOnStock()) {
@@ -705,15 +720,13 @@ class Cart extends Model implements CartContract, Adjustable
 					$out->add($item);
 				}
 
-				if(session()->has('list_code'))
-				{
+				if (session()->has('list_code')) {
 					// Obtém a quantidade disponível do produto
 					$productAvailableQuantity = $list->calculateAvailableQuantity($item->product_id);
-			
+
 					// Verifica se a quantidade do item excede a disponível
 					if ($item->quantity > $productAvailableQuantity) {
-						if($productAvailableQuantity == 0)
-						{
+						if ($productAvailableQuantity == 0) {
 							$item->out_of_stock = true;
 							$out->add($item);
 						} else {

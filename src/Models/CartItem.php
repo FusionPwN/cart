@@ -39,6 +39,10 @@ class CartItem extends Model implements CartItemContract, Adjustable
 
 	protected $guarded = ['id', 'created_at', 'updated_at'];
 
+	protected $casts = [
+		'properties' => 'object',
+	];
+
 	public static function boot()
 	{
 		parent::boot();
@@ -56,7 +60,7 @@ class CartItem extends Model implements CartItemContract, Adjustable
 	public function cartItemInit()
 	{
 		$this->price_vat = (float) $this->price_vat;
-		$this->prices = $this->formattedPrice();
+		$this->refreshPricesAttribute();
 	}
 
 	public function weight(?ShipmentMethod $shipmentMethod = null, ?ZoneGroup $zoneGroup = null): float

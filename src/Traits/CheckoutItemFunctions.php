@@ -17,6 +17,7 @@ use Vanilo\Adjustments\Models\Adjustment;
 use Vanilo\Adjustments\Models\AdjustmentTypeProxy;
 use Vanilo\Cart\Models\Cart;
 use Illuminate\Support\Str;
+use Vanilo\Adjustments\Models\AdjustmentProxy;
 use Vanilo\Cart\Models\CartItem;
 use Vanilo\Contracts\Buyable;
 
@@ -84,7 +85,7 @@ trait CheckoutItemFunctions
 	 *
 	 * @return float
 	 */
-	public function getAdjustedPrice(array $excludes = []): float
+	public function getAdjustedPrice(array $excludes = [], bool $skip = false): float
 	{
 		if ($this instanceof OrderItem) {
 			$price = $this->mod_price !== null ? $this->mod_price : $this->product->getPriceVat();
@@ -93,6 +94,18 @@ trait CheckoutItemFunctions
 		}
 
 		$adjustments = $this->adjustments()->getIterator();
+
+		if ($skip) {
+			$required_cart_adjustments = AdjustmentProxy::where('adjustable_type', $this instanceof OrderItem ? Order::class : Cart::class)
+				->where('adjustable_id', $this instanceof OrderItem ? $this->order_id : $this->cart_id)
+				->whereIn('type', [AdjustmentTypeProxy::OFERTA_PERCENTAGEM()->value()])
+				->get()
+				->where('data.item_id', $this->id);
+
+			foreach ($required_cart_adjustments as $cart_adjustment) {
+				$adjustments->append($cart_adjustment);
+			}
+		}
 
 		if (isset($adjustments)) {
 			foreach ($adjustments as $adjustment) {
@@ -315,5 +328,10 @@ trait CheckoutItemFunctions
 	public function isMNSRM(): bool
 	{
 		return $this->product->isMNSRM() || $this->product->isMNSRMV();
+	}
+
+	public function refreshPricesAttribute()
+	{
+		$this->prices = $this->formattedPrice();
 	}
 }

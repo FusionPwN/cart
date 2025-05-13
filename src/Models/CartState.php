@@ -18,25 +18,26 @@ use Vanilo\Cart\Contracts\CartState as CartStateContract;
 
 class CartState extends Enum implements CartStateContract
 {
-    public const __DEFAULT 	= self::ACTIVE;
-    public const ACTIVE 	= 'active';
-    public const CHECKOUT 	= 'checkout';
-	public const LOADING 	= 'in_use';
-    public const COMPLETED 	= 'completed';
-    public const ABANDONDED = 'abandoned';
+	public const __DEFAULT 			= self::ACTIVE;
+	public const ACTIVE 			= 'active';
+	public const CHECKOUT 			= 'checkout';
+	public const LOADING 			= 'in_use';
+	public const REQUIRES_UPDATE 	= 'requires_update';
+	public const COMPLETED 			= 'completed';
+	public const ABANDONDED 		= 'abandoned';
 
-    protected static $labels = [];
+	protected static $labels = [];
 
-    protected static $activeStates = [self::ACTIVE, self::CHECKOUT, self::LOADING];
+	protected static $activeStates = [self::ACTIVE, self::CHECKOUT, self::LOADING, self::REQUIRES_UPDATE];
 	protected static $loadingStates = [self::LOADING];
 
-    /**
-     * @inheritDoc
-     */
-    public function isActive(): bool
-    {
-        return in_array($this->value, static::$activeStates);
-    }
+	/**
+	 * @inheritDoc
+	 */
+	public function isActive(): bool
+	{
+		return in_array($this->value, static::$activeStates);
+	}
 
 	/**
 	 * @inheritDoc
@@ -46,18 +47,23 @@ class CartState extends Enum implements CartStateContract
 		return in_array($this->value, static::$loadingStates);
 	}
 
-    public function isAbandoned(): bool
+	public function isAbandoned(): bool
 	{
 		return $this->value == static::ABANDONDED;
 	}
 
-    /**
-     * @inheritDoc
-     */
-    public static function getActiveStates(): array
-    {
-        return static::$activeStates;
-    }
+	public function isRequiresUpdate(): bool
+	{
+		return $this->value == static::REQUIRES_UPDATE;
+	}
+
+	/**
+	 * @inheritDoc
+	 */
+	public static function getActiveStates(): array
+	{
+		return static::$activeStates;
+	}
 
 	/**
 	 * @inheritDoc
@@ -67,14 +73,15 @@ class CartState extends Enum implements CartStateContract
 		return static::$loadingStates;
 	}
 
-    protected static function boot()
-    {
-        static::$labels = [
-            self::ACTIVE 		=> __('backoffice.cart.state.Active'),
-            self::CHECKOUT 		=> __('backoffice.cart.state.Checkout'),
-			self::LOADING 		=> __('backoffice.cart.state.In Use'),
-            self::COMPLETED 	=> __('backoffice.cart.state.Completed'),
-            self::ABANDONDED 	=> __('backoffice.cart.state.Abandoned')
-        ];
-    }
+	protected static function boot()
+	{
+		static::$labels = [
+			self::ACTIVE 			=> __('backoffice.cart.state.Active'),
+			self::CHECKOUT 			=> __('backoffice.cart.state.Checkout'),
+			self::LOADING 			=> __('backoffice.cart.state.In Use'),
+			self::REQUIRES_UPDATE 	=> __('backoffice.cart.state.requires_update'),
+			self::COMPLETED 		=> __('backoffice.cart.state.Completed'),
+			self::ABANDONDED 		=> __('backoffice.cart.state.Abandoned')
+		];
+	}
 }
