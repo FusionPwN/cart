@@ -56,6 +56,21 @@ trait CheckoutItemFunctions
 		return (float) $adj_total;
 	}
 
+	public function subTotal(): float
+	{
+		return (float) $this->price_vat * $this->quantity;
+	}
+
+	/**
+	 * Property accessor alias to the total() method
+	 *
+	 * @return float
+	 */
+	public function getSubTotalAttribute()
+	{
+		return $this->subTotal();
+	}
+
 	public function quantity(): int
 	{
 		$adj_quantity = 0;

@@ -1076,7 +1076,7 @@ trait CheckoutFunctions
 		#return $this->total() - $this->shipping() - $this->feePackagingBag() - $this->payment();
 
 		if ($this instanceof Cart) {
-			return (float) $this->items->sum('price_vat');
+			return (float) $this->items->sum('subTotal');
 		} else if ($this instanceof Order) {
 			return $this->items->sum('original_price');
 		}
