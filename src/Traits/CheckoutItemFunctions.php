@@ -23,7 +23,7 @@ use Vanilo\Contracts\Buyable;
 
 trait CheckoutItemFunctions
 {
-	public Object $prices;
+	public object $prices;
 
 	public function total(): float
 	{
@@ -58,7 +58,13 @@ trait CheckoutItemFunctions
 
 	public function subTotal(): float
 	{
-		return (float) $this->price_vat * $this->quantity;
+		if ($this instanceof OrderItem) {
+			return (float) $this->original_price * $this->quantity;
+		} else if ($this instanceof CartItem) {
+			return (float) $this->price_vat * $this->quantity;
+		}
+
+		return 0;
 	}
 
 	/**

@@ -1073,13 +1073,7 @@ trait CheckoutFunctions
 
 	public function subTotal()
 	{
-		#return $this->total() - $this->shipping() - $this->feePackagingBag() - $this->payment();
-
-		if ($this instanceof Cart) {
-			return (float) $this->items->sum('subTotal');
-		} else if ($this instanceof Order) {
-			return $this->items->sum('original_price');
-		}
+		return (float) $this->items->sum('subTotal');
 	}
 
 	/**
