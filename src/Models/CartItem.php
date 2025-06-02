@@ -43,6 +43,11 @@ class CartItem extends Model implements CartItemContract, Adjustable
 		'properties' => 'object',
 	];
 
+	public $display_quantity;
+	public bool $can_change_quantity = true;
+	public bool $out_of_stock = false;
+	public bool $missing_units = false;
+
 	public static function boot()
 	{
 		parent::boot();
