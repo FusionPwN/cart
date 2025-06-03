@@ -77,6 +77,16 @@ trait CheckoutItemFunctions
 		return $this->subTotal();
 	}
 
+	/**
+	 * Property accessor alias to the total() method
+	 *
+	 * @return float
+	 */
+	public function getTotalAttribute()
+	{
+		return $this->total();
+	}
+
 	public function quantity(): int
 	{
 		$adj_quantity = 0;

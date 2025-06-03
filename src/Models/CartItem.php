@@ -85,16 +85,6 @@ class CartItem extends Model implements CartItemContract, Adjustable
 	}
 
 	/**
-	 * Property accessor alias to the total() method
-	 *
-	 * @return float
-	 */
-	public function getTotalAttribute()
-	{
-		return $this->total();
-	}
-
-	/**
 	 * Scope to query items of a cart
 	 *
 	 * @param \Illuminate\Database\Eloquent\Builder $query

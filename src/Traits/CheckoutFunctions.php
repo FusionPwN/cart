@@ -354,12 +354,20 @@ trait CheckoutFunctions
 		foreach ($this->applyableDiscounts as $discount) {
 			$discount_data = $discount['discount_data'];
 			$item_count = $discount['cart_items']->sum('quantity');
+			$items_total_value = $discount['cart_items']->sum('total');
 
 			if ($discount['tag'] == 'oferta_barato' || $discount['tag'] == 'oferta_prod') {
-				$remainder = $item_count % $discount_data->purchase_number;
-				$free_quantity = (($item_count - $remainder) / $discount_data->purchase_number) * $discount_data->offer_number;
+				if ($discount_data->offer_type == 'quantity') {
+					$remainder = $item_count % $discount_data->purchase_number;
+					$free_quantity = intdiv($item_count - $remainder, $discount_data->purchase_number) * $discount_data->offer_number;
+				} else if ($discount_data->offer_type == 'amount') {
+					$remainder = fmod($items_total_value, $discount_data->purchase_amount);
+					$free_quantity = floor(($items_total_value - $remainder) / $discount_data->purchase_amount) * $discount_data->offer_number;
+				} else {
+					$remainder = 0;
+					$free_quantity = 0;
+				}
 
-				# validar se o nr de artigos selecionados para oferta é maior do que o nr a oferecer, caso o cliente reduza a quantidade a comprar
 				$gifts = session('checkout.selected_gifts', []);
 				$temp_gifts = [];
 				if (count($gifts) > $free_quantity) {
@@ -567,12 +575,12 @@ trait CheckoutFunctions
 				throw new Exception('Shipping method uses weights but no weight was found');
 			}
 
-			if ((!isset($this->shippingZone->pivot->max_weight) || $this->shippingZone->pivot->max_weight == 0 || $this->weight($this->shipping, $this->shippingZone) < $this->shippingZone->pivot->max_weight) && !$this->itemsPreventFreeShipping() && $this->subTotal() >= $this->shippingZone->pivot->min_value && $this->shippingZone->pivot->shipping_offer == 1) {
+			if ((!isset($this->shippingZone->pivot->max_weight) || $this->shippingZone->pivot->max_weight == 0 || $this->weight($this->shipping, $this->shippingZone) < $this->shippingZone->pivot->max_weight) && !$this->itemsPreventFreeShipping() && $this->itemsTotal() >= $this->shippingZone->pivot->min_value && $this->shippingZone->pivot->shipping_offer == 1) {
 				$threshold = $this->shippingZone->pivot->min_value ?? null;
 				$cause = 'order_value';
 			} else {
 				if (isset($this->shippingZone->pivot->max_weight_optional) || isset($this->shippingZone->pivot->min_value_optional)) {
-					if ((!isset($this->shippingZone->pivot->max_weight_optional) || $this->shippingZone->pivot->max_weight_optional == 0 || $this->weight($this->shipping, $this->shippingZone) < $this->shippingZone->pivot->max_weight_optional) && !$this->itemsPreventFreeShipping() && $this->subTotal() >= $this->shippingZone->pivot->min_value_optional && $this->shippingZone->pivot->shipping_offer == 1) {
+					if ((!isset($this->shippingZone->pivot->max_weight_optional) || $this->shippingZone->pivot->max_weight_optional == 0 || $this->weight($this->shipping, $this->shippingZone) < $this->shippingZone->pivot->max_weight_optional) && !$this->itemsPreventFreeShipping() && $this->itemsTotal() >= $this->shippingZone->pivot->min_value_optional && $this->shippingZone->pivot->shipping_offer == 1) {
 						$threshold = $this->shippingZone->pivot->min_value_optional ?? null;
 						$cause = 'order_value';
 					} else {
