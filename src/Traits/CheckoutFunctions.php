@@ -912,9 +912,27 @@ trait CheckoutFunctions
 		foreach ($this->items as $item) {
 			if (!isset($validProducts) || (isset($validProducts) && $validProducts->contains('id', $item->product_id))) {
 				if ($coupon->type == CouponType::PERCENTAGE()) {
-					$item->adjustments()->create(new CouponPerc($this, $item, $coupon));
+					$adjustment = $item->adjustments()->create(new CouponPerc($this, $item, $coupon));
+
+					if($this->activeCoupon->offers_products == 1 && $this->activeCoupon->offer_product_min_purchase_value < $this->itemsTotal())
+					{
+						$this->activeCoupon->possible_gifts = ProductProxy::withoutEvents(function () use ($adjustment) {
+							return ProductProxy::whereIn('id', $adjustment->getData('possible_gifts'))->hasStock()->get();
+						});
+	
+						$this->activeCoupon->selected_gifts = $adjustment->getData('selected_gifts');
+					}
 				} else if ($coupon->type == CouponType::NUMERARY()) {
-					$item->adjustments()->create(new CouponNum($this, $item, $coupon));
+					$adjustment = $item->adjustments()->create(new CouponNum($this, $item, $coupon));
+
+					if($this->activeCoupon->offers_products == 1 && $this->activeCoupon->offer_product_min_purchase_value < $this->itemsTotal())
+					{
+						$this->activeCoupon->possible_gifts = ProductProxy::withoutEvents(function () use ($adjustment) {
+							return ProductProxy::whereIn('id', $adjustment->getData('possible_gifts'))->hasStock()->get();
+						});
+	
+						$this->activeCoupon->selected_gifts = $adjustment->getData('selected_gifts');
+					}
 				} else if ($coupon->type == CouponType::FREESHIPPING()) {
 					$this->adjustments()->create(new CouponFreeShipping($this, $coupon));
 					break;
