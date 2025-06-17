@@ -242,7 +242,7 @@ class Cart extends Model implements CartContract, Adjustable
 		}
 		if (isset($product->max_stock_cart) && $product->max_stock_cart > 0) {
 			if (null !== $item && $itemQuantity + $qty > $product->max_stock_cart) {
-				$qty = abs($product->max_stock_cart - $itemQuantity);
+				$qty = $itemQuantity + $qty;//abs($product->max_stock_cart - $itemQuantity);
 				$errors[] = (object) ['type' => 'warning', 'message' => 'max-quantity-reached'];
 			} else if (null === $item && $qty > $product->max_stock_cart) {
 				$qty = $product->max_stock_cart;
@@ -306,7 +306,8 @@ class Cart extends Model implements CartContract, Adjustable
 					$item->quantity += $qt;
 				}
 
-				if (isset($product->max_stock_cart) && $product->max_stock_cart > 0) {
+				
+				if (isset($product->max_stock_cart) && $product->max_stock_cart > 0 && $item->quantity > $product->max_stock_cart) {
 					$item->quantity = $product->max_stock_cart;
 				}
 
@@ -369,14 +370,19 @@ class Cart extends Model implements CartContract, Adjustable
 		$item->offsetUnset('display_quantity');
 
 		$qt = $qty;
-		$result = $this->checkAvailability($item->product, $item, $qt);
-		$qt = $result->quantity;
+		
+		if($qt > $item->quantity){
+			$result = $this->checkAvailability($item->product, $item, $qt - $item->quantity);
+			$qt = $result->quantity;
 
+			$item->quantity += $qt;
+		} else {
+			$item->quantity = $qt;
+		}
+		
 		if ($item) {
 			if ($qt > 0) {
-				$item->quantity = $qt;
-
-				if (isset($item->product->max_stock_cart) && $item->product->max_stock_cart > 0) {
+				if (isset($item->product->max_stock_cart) && $item->product->max_stock_cart > 0 && $item->quantity > $item->product->max_stock_cart) {
 					$item->quantity = $item->product->max_stock_cart;
 				}
 
@@ -389,7 +395,7 @@ class Cart extends Model implements CartContract, Adjustable
 		$this->setRequiresUpdateState();
 
 		return (object) [
-			'errors'	=> $result->errors,
+			'errors'	=> $result->errors ?? collect(),
 			'item' 		=> $item
 		];
 	}
