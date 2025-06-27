@@ -150,7 +150,7 @@ class Cart extends Model implements CartContract, Adjustable
 			$item->prices = $item->formattedPrice(); # refreshes the price attribute
 			$item->display_quantity = $item->quantity;
 
-			if (isset($item->properties) && $item->properties->fake) {
+			if (isset($item->properties) && property_exists($item->properties, 'fake') && $item->properties->fake) {
 				$item->can_change_quantity = false;
 			} else {
 				$item->can_change_quantity = true;
