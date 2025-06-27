@@ -369,4 +369,9 @@ trait CheckoutItemFunctions
 	{
 		$this->prices = $this->formattedPrice();
 	}
+
+	public function isLens(): bool
+	{
+		return $this->product->isLens();
+	}
 }
