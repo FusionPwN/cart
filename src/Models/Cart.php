@@ -302,7 +302,7 @@ class Cart extends Model implements CartContract, Adjustable
 			$result = $this->checkAvailability($product, $item, $qt);
 			$qt = $result->quantity;
 
-			if ($item) {
+			if (!$product->isLens() && $item) {
 				if (count($result->errors) > 0) {
 					$item->quantity = $qt;
 				} else {
