@@ -90,6 +90,11 @@ trait CheckoutItemFunctions
 	public function quantity(): int
 	{
 		$adj_quantity = 0;
+		$quantity = $this->quantity;
+
+		if ($this->product->isLens()) {
+			$quantity = (float) ($this->properties->lens_properties->left->quantity ?? 0) + (float) ($this->properties->lens_properties->right->quantity ?? 0);
+		}
 
 		foreach ($this->adjustments()->getIterator() as $adjustment) {
 			if ($adjustment->type == AdjustmentTypeProxy::OFERTA_BARATO()) {
@@ -97,7 +102,7 @@ trait CheckoutItemFunctions
 			}
 		}
 
-		return (int) $this->quantity - $adj_quantity;
+		return (int) $quantity - $adj_quantity;
 	}
 
 	public function vatTotal(): float

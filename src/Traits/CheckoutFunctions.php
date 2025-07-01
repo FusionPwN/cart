@@ -1107,7 +1107,16 @@ trait CheckoutFunctions
 	 */
 	public function itemCount()
 	{
-		return $this->items->sum('quantity');
+		if ($this instanceof Order) {
+			return $this->items->sum('quantity');
+		} else {
+			$count = 0;
+			foreach ($this->items as $item) {
+				$count += $item->quantity();
+			}
+
+			return $count;
+		}
 	}
 
 	public function couponDiscount(): float
