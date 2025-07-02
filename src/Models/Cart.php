@@ -148,7 +148,7 @@ class Cart extends Model implements CartContract, Adjustable
 
 		foreach ($items['cart'] as &$item) {
 			$item->prices = $item->formattedPrice(); # refreshes the price attribute
-			$item->display_quantity = $item->quantity;
+			$item->display_quantity = $item->quantity();
 
 			if (isset($item->properties) && property_exists($item->properties, 'fake') && $item->properties->fake) {
 				$item->can_change_quantity = false;
@@ -167,7 +167,7 @@ class Cart extends Model implements CartContract, Adjustable
 						$update_result = $this->setItemQty($item_to_update, 9999999999);
 						$item = $update_result->item;
 						$item->prices = $item->formattedPrice();
-						$item->display_quantity = $item->quantity;
+						$item->display_quantity = $item->quantity();
 					}
 
 					$item->out_of_stock = false;
