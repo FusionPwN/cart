@@ -803,7 +803,7 @@ trait CheckoutFunctions
 				];
 			}
 
-			$returnType[$key]->title = $this->adjustments()->byType(AdjustmentTypeProxy::$const())->first()->title ?? null;
+			$returnType[$key]->title = $this->adjustments()->byType(AdjustmentTypeProxy::$const())->first()->title ?? $label ?? null;
 			$returnType[$key]->total = $this->adjustments()->byType(AdjustmentTypeProxy::$const())->total();
 		}
 
@@ -817,7 +817,11 @@ trait CheckoutFunctions
 				if ($use_skip_conditions && AdjustmentTypeProxy::DESCONTO_PERC_EURO()->equals(AdjustmentTypeProxy::$const()) && isset($item->product->validDiscountTree) && count($item->product->validDiscountTree) > 0 && $item->product->validDiscountTree->first()->hide_discount == 1) continue;
 
 				$type_total = $item->adjustments()->byType(AdjustmentTypeProxy::$const())->total();
-				$returnType[$key]->title = $item->adjustments()->byType(AdjustmentTypeProxy::$const())->first()->title ?? null;
+
+				if (is_null($returnType[$key]->title)) {
+					$returnType[$key]->title = $item->adjustments()->byType(AdjustmentTypeProxy::$const())->first()->title ?? null;
+				}
+
 				$returnType[$key]->total = $returnType[$key]->total + ($type_total);
 
 				if ($type_total != 0) {
@@ -914,23 +918,21 @@ trait CheckoutFunctions
 				if ($coupon->type == CouponType::PERCENTAGE()) {
 					$adjustment = $item->adjustments()->create(new CouponPerc($this, $item, $coupon));
 
-					if($this->activeCoupon->offers_products == 1 && $this->activeCoupon->offer_product_min_purchase_value < $this->itemsTotal())
-					{
+					if ($this->activeCoupon->offers_products == 1 && $this->activeCoupon->offer_product_min_purchase_value < $this->itemsTotal()) {
 						$this->activeCoupon->possible_gifts = ProductProxy::withoutEvents(function () use ($adjustment) {
 							return ProductProxy::whereIn('id', $adjustment->getData('possible_gifts'))->hasStock()->get();
 						});
-	
+
 						$this->activeCoupon->selected_gifts = $adjustment->getData('selected_gifts');
 					}
 				} else if ($coupon->type == CouponType::NUMERARY()) {
 					$adjustment = $item->adjustments()->create(new CouponNum($this, $item, $coupon));
 
-					if($this->activeCoupon->offers_products == 1 && $this->activeCoupon->offer_product_min_purchase_value < $this->itemsTotal())
-					{
+					if ($this->activeCoupon->offers_products == 1 && $this->activeCoupon->offer_product_min_purchase_value < $this->itemsTotal()) {
 						$this->activeCoupon->possible_gifts = ProductProxy::withoutEvents(function () use ($adjustment) {
 							return ProductProxy::whereIn('id', $adjustment->getData('possible_gifts'))->hasStock()->get();
 						});
-	
+
 						$this->activeCoupon->selected_gifts = $adjustment->getData('selected_gifts');
 					}
 				} else if ($coupon->type == CouponType::FREESHIPPING()) {
