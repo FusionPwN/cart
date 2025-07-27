@@ -17,7 +17,7 @@
     ],
     "require": {
         "php": "^8.0|^8.2|^8.4",
-        "konekt/concord": "^1.6"
+        "konekt/concord": "^1.14|^1.16"
     },
     "require-dev": {
         "ext-sqlite3": "*",
