@@ -382,7 +382,11 @@ class Cart extends Model implements CartContract, Adjustable
 			$result = $this->checkAvailability($item->product, $item, $qt - $item->quantity);
 			$qt = $result->quantity;
 
-			$item->quantity += $qt;
+			if(count($result->errors) > 0) {
+				$item->quantity = $qt;
+			} else {
+				$item->quantity += $qt;
+			}
 		} else {
 			$item->quantity = $qt;
 		}
