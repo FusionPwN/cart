@@ -235,6 +235,10 @@ trait CheckoutFunctions
 							'level' => $max_level,
 							'value' => $discount_data->properties->levels[$max_level]
 						];
+
+						if ($discount_data->properties->only_to_least_expensive_product == 1) {
+							break;
+						}
 					}
 				} else {
 					for ($i = 0; $i < $item_count; $i++) {
