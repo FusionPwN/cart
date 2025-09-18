@@ -227,16 +227,7 @@ trait CheckoutFunctions
 				$level_count = 0;
 				$level_list = [];
 
-				if ($discount_data->properties->highest == 1) {
-					$max_level = $item_count > count($discount_data->properties->levels) ? count($discount_data->properties->levels) - 1 : $item_count - 1;
-
-					for ($i = 0; $i < $item_count; $i++) {
-						$level_list[] = [
-							'level' => $max_level,
-							'value' => $discount_data->properties->levels[$max_level]
-						];
-					}
-				} else {
+				if ($discount_data->properties->variant == 'variant-a') {
 					for ($i = 0; $i < $item_count; $i++) {
 						$level_count = $level_count > count($discount_data->properties->levels) - 1 ? 0 : $level_count;
 						$level_list[] = [
@@ -245,6 +236,58 @@ trait CheckoutFunctions
 						];
 
 						$level_count++;
+					}
+				} else if ($discount_data->properties->variant == 'variant-b') {
+					$max_level = $item_count > count($discount_data->properties->levels) ? count($discount_data->properties->levels) - 1 : $item_count - 1;
+
+					for ($i = 0; $i < $item_count; $i++) {
+						$level_list[] = [
+							'level' => $max_level,
+							'value' => $discount_data->properties->levels[$max_level]
+						];
+					}
+				} else if ($discount_data->properties->variant == 'variant-c') {
+					$max_level = $item_count > count($discount_data->properties->levels) ? count($discount_data->properties->levels) - 1 : $item_count - 1;
+
+					for ($i = 0; $i < $item_count - 1; $i++) {
+						$level_list[] = [
+							'level' => -1,
+							'value' => 0
+						];
+					}
+
+					$level_list[] = [
+						'level' => $max_level,
+						'value' => $discount_data->properties->levels[$max_level]
+					];
+				} else if ($discount_data->properties->variant == 'variant-d') {
+					$max_level = $item_count > count($discount_data->properties->levels) ? count($discount_data->properties->levels) - 1 : $item_count - 1;
+					$repeat_count = intdiv($item_count, count($discount_data->properties->levels));
+
+					for ($i = 0; $i < $repeat_count; $i++) {
+						$level_list[] = [
+							'level' => -1,
+							'value' => 0
+						];
+						$level_list[] = [
+							'level' => $max_level,
+							'value' => $discount_data->properties->levels[$max_level]
+						];
+					}
+
+					# if remainder > 0 it means it has to had the first level again
+					if ($item_count % count($discount_data->properties->levels) > 0) {
+						$remaining_levels = $item_count - count($level_list);
+
+						for ($i = 0; $i < $remaining_levels; $i++) {
+							$level_count = $level_count > count($discount_data->properties->levels) - 1 ? 0 : $level_count;
+							$level_list[] = [
+								'level' => $level_count,
+								'value' => $discount_data->properties->levels[$level_count] # este valor apenas serve para a ordenaçao
+							];
+
+							$level_count++;
+						}
 					}
 				}
 
