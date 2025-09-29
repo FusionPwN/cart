@@ -711,6 +711,19 @@ trait CheckoutFunctions
 					}
 				}
 			}
+		} else if($this->shipping->isStorePickup()){
+			// Verifica se tem definido o limite para oferta
+			if (isset($this->shipping->free_shipping_over) && $this->shipping->free_shipping_over > 0) {
+				// Se o total da encomenda >= limite -> oferta
+				if (!$this->itemsPreventFreeShipping() && $this->total() >= $this->shipping->free_shipping_over) {
+					$this->shipping->price = 0;
+				} else {
+					$this->shipping->price = $this->shipping->price ?? 0;
+				}
+			} else {
+				// Se não tiver limite configurado ou estiver a 0, cobra sempre o preço base
+				$this->shipping->price = $this->shipping->price ?? 0;
+			}
 		}
 
 		$this->removeAdjustment(null, AdjustmentTypeProxy::SHIPPING());
