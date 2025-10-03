@@ -68,13 +68,38 @@ class Cart extends Model implements CartContract, Adjustable
 
 	public function cartInit(bool $override_state = false)
 	{
-		$this->buildCartGlobals();
-		if ($this->state->isRequiresUpdate()) {
-			$this->resetState();
-			$this->unfoldCartItemsForDiscounts();
+		$lockKey = 'cart:' . $this->id . ':lock';
+		$maxRetries = 5;
+		$retryDelayMs = 500; // 0.5 seconds
+
+		for ($attempt = 0; $attempt < $maxRetries; $attempt++) {
+			$lock = Cache::lock($lockKey, 2);
+
+			try {
+				$lock->block(2); // Wait up to 2 seconds for lock
+
+				$this->buildCartGlobals();
+
+				if ($this->state->isRequiresUpdate()) {
+					$this->resetState();
+					$this->unfoldCartItemsForDiscounts();
+				}
+
+				$this->buildCartGlobals();
+				$this->updateAdjustments();
+
+				optional($lock)->release();
+				//return true; // Success
+
+			} catch (\Illuminate\Contracts\Cache\LockTimeoutException $e) {
+				optional($lock)->release();
+				usleep($retryDelayMs * 1000); // Wait before retrying
+				$this->refresh();
+			}
 		}
-		$this->buildCartGlobals();
-		$this->updateAdjustments();
+
+		// If all retries fail
+		// logger()->warning('Cart lock could not be acquired after retries.');
 	}
 
 	public function setLoadingState()
