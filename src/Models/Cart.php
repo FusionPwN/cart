@@ -98,7 +98,7 @@ class Cart extends Model implements CartContract, Adjustable
 			}*/
 
 			$this->buildCartGlobals();
-			
+
 			if ($this->state->isRequiresUpdate()) {
 				$this->resetState();
 				$this->unfoldCartItemsForDiscounts();
@@ -106,7 +106,7 @@ class Cart extends Model implements CartContract, Adjustable
 
 			$this->buildCartGlobals();
 			$this->updateAdjustments();
-		}
+		//}
 
 		// If all retries fail
 		// logger()->warning('Cart lock could not be acquired after retries.');
