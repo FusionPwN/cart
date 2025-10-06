@@ -68,7 +68,7 @@ class Cart extends Model implements CartContract, Adjustable
 
 	public function cartInit(bool $override_state = false)
 	{
-		$lockKey = 'cart:' . $this->id . ':lock';
+		/*$lockKey = 'cart:' . $this->id . ':lock';
 		$maxRetries = 5;
 		$retryDelayMs = 500; // 0.5 seconds
 
@@ -95,7 +95,17 @@ class Cart extends Model implements CartContract, Adjustable
 				optional($lock)->release();
 				usleep($retryDelayMs * 1000); // Wait before retrying
 				$this->refresh();
+			}*/
+
+			$this->buildCartGlobals();
+			
+			if ($this->state->isRequiresUpdate()) {
+				$this->resetState();
+				$this->unfoldCartItemsForDiscounts();
 			}
+
+			$this->buildCartGlobals();
+			$this->updateAdjustments();
 		}
 
 		// If all retries fail
