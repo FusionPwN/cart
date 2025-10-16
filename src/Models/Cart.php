@@ -764,29 +764,27 @@ class Cart extends Model implements CartContract, Adjustable
 				$list = Lists::where('code', session()->get('list_code'))->first();
 			}
 			foreach ($this->items as $item) {
-				if(Cache::get('settings.products.add_unlimited_quantity_to_cart') == 0){
-					if (!$item->product->isOnStock()) {
-						$item->out_of_stock = true;
-						$out->add($item);
-					} else if (!$item->product->hasSuficientStock($item->quantity)) {
-						$item->missing_units = true;
-						$out->add($item);
-					}
+				if (!$item->product->isOnStock()) {
+					$item->out_of_stock = true;
+					$out->add($item);
+				} else if (!$item->product->hasSuficientStock($item->quantity)) {
+					$item->missing_units = true;
+					$out->add($item);
+				}
 
-					if (session()->has('list_code')) {
-						
-						// Obtém a quantidade disponível do produto
-						$productAvailableQuantity = $list->calculateAvailableQuantity($item->product_id);
+				if (session()->has('list_code')) {
+					
+					// Obtém a quantidade disponível do produto
+					$productAvailableQuantity = $list->calculateAvailableQuantity($item->product_id);
 
-						// Verifica se a quantidade do item excede a disponível
-						if ($item->quantity > $productAvailableQuantity) {
-							if ($productAvailableQuantity == 0) {
-								$item->out_of_stock = true;
-								$out->add($item);
-							} else {
-								$item->missing_units = true;
-								$out->add($item);
-							}
+					// Verifica se a quantidade do item excede a disponível
+					if ($item->quantity > $productAvailableQuantity) {
+						if ($productAvailableQuantity == 0) {
+							$item->out_of_stock = true;
+							$out->add($item);
+						} else {
+							$item->missing_units = true;
+							$out->add($item);
 						}
 					}
 				}
