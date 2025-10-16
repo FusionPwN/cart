@@ -22,8 +22,6 @@ use Illuminate\Support\Str;
 use Vanilo\Adjustments\Contracts\Adjustable;
 use Vanilo\Adjustments\Contracts\AdjustmentType;
 use Vanilo\Adjustments\Models\Adjustment;
-use Vanilo\Adjustments\Support\HasAdjustmentsViaRelation;
-use Vanilo\Adjustments\Support\RecalculatesAdjustments;
 use Vanilo\Cart\Traits\CheckoutItemFunctions;
 use Vanilo\Cart\Traits\HasModifiers;
 
@@ -33,8 +31,6 @@ use Vanilo\Cart\Traits\HasModifiers;
  */
 class CartItem extends Model implements CartItemContract, Adjustable
 {
-	#use HasAdjustmentsViaRelation;
-	#use RecalculatesAdjustments;
 	use HasModifiers;
 	use ProductItem;
 	use CheckoutItemFunctions;

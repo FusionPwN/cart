@@ -464,17 +464,17 @@ class CartManager implements CartManagerContract
 		return $this->model()->updateAdjustments();
 	}
 
-	public function getShippingAdjustment(): ?Adjustment
+	public function getShippingAdjustment(): Adjustment|Modifier|null
 	{
 		return $this->exists() ? $this->model()->getShippingAdjustment() : null;
 	}
 
-	public function getClientCardAdjustment(): ?Adjustment
+	public function getClientCardAdjustment(): Adjustment|Modifier|null
 	{
 		return $this->model()->getClientCardAdjustment();
 	}
 
-	public function getPaymentAdjustment(): ?Adjustment
+	public function getPaymentAdjustment(): Adjustment|Modifier|null
 	{
 		return $this->exists() ? $this->model()->getPaymentAdjustment() : null;
 	}

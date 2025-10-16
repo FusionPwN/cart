@@ -18,8 +18,6 @@ use Konekt\Enum\Eloquent\CastsEnums;
 use Vanilo\Cart\Exceptions\InvalidCartConfigurationException;
 use Vanilo\Adjustments\Contracts\Adjustable;
 use Vanilo\Adjustments\Models\AdjustmentTypeProxy;
-use Vanilo\Adjustments\Support\HasAdjustmentsViaRelation;
-use Vanilo\Adjustments\Support\RecalculatesAdjustments;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
@@ -40,9 +38,6 @@ use Vanilo\Product\Models\ProductStateProxy;
 class Cart extends Model implements CartContract, Adjustable
 {
 	use CastsEnums;
-	#use HasAdjustmentsViaRelation;
-	#use RecalculatesAdjustments;
-
 	use HasModifiers;
 	use CheckoutFunctions;
 
