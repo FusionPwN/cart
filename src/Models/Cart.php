@@ -32,14 +32,18 @@ use App\Modulos\Plural\PluralProvider;
 use App\Rules\CartGiftsValidForCheckout;
 use App\Rules\CartItemsStockValidForCheckout;
 use App\Rules\CartItemsValidForCheckout;
+use Vanilo\Cart\Helpers\Modifier;
+use Vanilo\Cart\Traits\HasModifiers;
 use Vanilo\Product\Models\ProductProxy;
 use Vanilo\Product\Models\ProductStateProxy;
 
 class Cart extends Model implements CartContract, Adjustable
 {
 	use CastsEnums;
-	use HasAdjustmentsViaRelation;
-	use RecalculatesAdjustments;
+	#use HasAdjustmentsViaRelation;
+	#use RecalculatesAdjustments;
+
+	use HasModifiers;
 	use CheckoutFunctions;
 
 	public $validator;
@@ -68,48 +72,17 @@ class Cart extends Model implements CartContract, Adjustable
 
 	public function cartInit(bool $override_state = false)
 	{
-		/*$lockKey = 'cart:' . $this->id . ':lock';
-		$maxRetries = 5;
-		$retryDelayMs = 500; // 0.5 seconds
+		$this->buildCartGlobals();
+		if ($this->state->isRequiresUpdate()) {
+			$this->resetState();
+			$this->unfoldCartItemsForDiscounts();
+		}
+		$this->buildCartGlobals();
+		$this->updateAdjustments();
 
-		for ($attempt = 0; $attempt < $maxRetries; $attempt++) {
-			$lock = Cache::lock($lockKey, 2);
-
-			try {
-				$lock->block(2); // Wait up to 2 seconds for lock
-
-				$this->buildCartGlobals();
-
-				if ($this->state->isRequiresUpdate()) {
-					$this->resetState();
-					$this->unfoldCartItemsForDiscounts();
-				}
-
-				$this->buildCartGlobals();
-				$this->updateAdjustments();
-
-				optional($lock)->release();
-				//return true; // Success
-
-			} catch (\Illuminate\Contracts\Cache\LockTimeoutException $e) {
-				optional($lock)->release();
-				usleep($retryDelayMs * 1000); // Wait before retrying
-				$this->refresh();
-			}*/
-
-			$this->buildCartGlobals();
-
-			if ($this->state->isRequiresUpdate()) {
-				$this->resetState();
-				$this->unfoldCartItemsForDiscounts();
-			}
-
-			$this->buildCartGlobals();
-			$this->updateAdjustments();
-		//}
-
-		// If all retries fail
-		// logger()->warning('Cart lock could not be acquired after retries.');
+		foreach ($this->items as &$item) {
+			$item->cartItemInit();
+		}
 	}
 
 	public function setLoadingState()
@@ -172,7 +145,13 @@ class Cart extends Model implements CartContract, Adjustable
 	 */
 	public function getItemsDisplay(): Collection
 	{
-		$this->load('items');
+		/* $this->load('items');
+
+		foreach ($this->items as &$item) {
+			$item->cartItemInit();
+		}
+
+		dd($this->items); */
 
 		$items = [
 			'cart' => clone $this->items,
@@ -226,7 +205,7 @@ class Cart extends Model implements CartContract, Adjustable
 							$item->free_quantity = $free_quantity;
 						}
 
-						if($adjustment->type == AdjustmentTypeProxy::OFERTA_BARATO() ){
+						if ($adjustment->type == AdjustmentTypeProxy::OFERTA_BARATO()) {
 							if ($free_quantity != $item->quantity) {
 								array_push($items['free'], $free_item);
 							}
@@ -274,8 +253,7 @@ class Cart extends Model implements CartContract, Adjustable
 		}
 
 		if (!$product->isUnlimitedAvailability() && !$product->isLimitedAvailability()) {
-			if(Cache::get('settings.products.add_unlimited_quantity_to_cart') == 0)
-			{
+			if (Cache::get('settings.products.add_unlimited_quantity_to_cart') == 0) {
 				if ((null !== $item && ($qty > $itemQuantity && $itemQuantity + $qty > $product->getStock())) || ($qty > $product->getStock() || $itemQuantity + $qty > $product->getStock())) {
 					$qty = $product->getStock();
 					$errors[] = (object) ['type' => 'warning', 'message' => 'not-enough-stock'];
@@ -284,7 +262,7 @@ class Cart extends Model implements CartContract, Adjustable
 		}
 		if (isset($product->max_stock_cart) && $product->max_stock_cart > 0) {
 			if (null !== $item && $itemQuantity + $qty > $product->max_stock_cart) {
-				$qty = $itemQuantity + $qty;//abs($product->max_stock_cart - $itemQuantity);
+				$qty = $itemQuantity + $qty; //abs($product->max_stock_cart - $itemQuantity);
 				$errors[] = (object) ['type' => 'warning', 'message' => 'max-quantity-reached'];
 			} else if (null === $item && $qty > $product->max_stock_cart) {
 				$qty = $product->max_stock_cart;
@@ -348,7 +326,7 @@ class Cart extends Model implements CartContract, Adjustable
 					$item->quantity += $qt;
 				}
 
-				
+
 				if (isset($product->max_stock_cart) && $product->max_stock_cart > 0 && $item->quantity > $product->max_stock_cart) {
 					$item->quantity = $product->max_stock_cart;
 				}
@@ -412,12 +390,12 @@ class Cart extends Model implements CartContract, Adjustable
 		$item->offsetUnset('display_quantity');
 
 		$qt = $qty;
-		
-		if($qt > $item->quantity){
+
+		if ($qt > $item->quantity) {
 			$result = $this->checkAvailability($item->product, $item, $qt - $item->quantity);
 			$qt = $result->quantity;
 
-			if(count($result->errors) > 0) {
+			if (count($result->errors) > 0) {
 				$item->quantity = $qt;
 			} else {
 				$item->quantity += $qt;
@@ -425,7 +403,7 @@ class Cart extends Model implements CartContract, Adjustable
 		} else {
 			$item->quantity = $qt;
 		}
-		
+
 		if ($item) {
 			if ($qt > 0) {
 				if (isset($item->product->max_stock_cart) && $item->product->max_stock_cart > 0 && $item->quantity > $item->product->max_stock_cart) {
@@ -773,7 +751,7 @@ class Cart extends Model implements CartContract, Adjustable
 				}
 
 				if (session()->has('list_code')) {
-					
+
 					// Obtém a quantidade disponível do produto
 					$productAvailableQuantity = $list->calculateAvailableQuantity($item->product_id);
 

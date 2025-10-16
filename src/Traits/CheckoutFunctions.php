@@ -2,12 +2,10 @@
 
 namespace Vanilo\Cart\Traits;
 
-use App\Classes\Utilities;
 use App\Models\Admin\Card;
 use App\Models\Admin\Coupon;
 use App\Models\Admin\CouponType;
 use App\Models\Admin\Order;
-use App\Models\Admin\OrderCoupon;
 use App\Models\Admin\ShipmentMethod;
 use App\Rules\Coupon\CanBeUsedInZone;
 use App\Rules\Coupon\CanBeUsedWithDiscounts;
@@ -380,11 +378,11 @@ trait CheckoutFunctions
 	public function updateAdjustments()
 	{
 		debug('STARTING ADJUSTMENT UPDATES');
-		$this->removeCouponAdjustments();
-		$this->removeAllAdjustments();
+		#$this->removeCouponAdjustments();
+		#$this->removeAllAdjustments();
 
 		foreach ($this->items as $item) {
-			$item->removeAllAdjustments();
+			#$item->removeAllAdjustments();
 
 			if ($this instanceof Order && $item->overridesPrice()) {
 				#keep empty
@@ -450,6 +448,8 @@ trait CheckoutFunctions
 						$item->adjustments()->create(new DiscountScalablePercNum($this, $item, $discount_data, $item->properties->discount_level, $item->quantity));
 					}
 				}
+
+				#dd($item->adjustments());
 			}
 		}
 
@@ -710,19 +710,6 @@ trait CheckoutFunctions
 						curl_close($curl);
 					}
 				}
-			}
-		} else if($this->shipping->isStorePickup()){
-			// Verifica se tem definido o limite para oferta
-			if (isset($this->shipping->free_shipping_over) && $this->shipping->free_shipping_over > 0) {
-				// Se o total da encomenda >= limite -> oferta
-				if (!$this->itemsPreventFreeShipping() && $this->total() >= $this->shipping->free_shipping_over) {
-					$this->shipping->price = 0;
-				} else {
-					$this->shipping->price = $this->shipping->price ?? 0;
-				}
-			} else {
-				// Se não tiver limite configurado ou estiver a 0, cobra sempre o preço base
-				$this->shipping->price = $this->shipping->price ?? 0;
 			}
 		}
 

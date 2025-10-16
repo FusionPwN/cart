@@ -25,6 +25,7 @@ use Vanilo\Adjustments\Models\Adjustment;
 use Vanilo\Adjustments\Support\HasAdjustmentsViaRelation;
 use Vanilo\Adjustments\Support\RecalculatesAdjustments;
 use Vanilo\Cart\Traits\CheckoutItemFunctions;
+use Vanilo\Cart\Traits\HasModifiers;
 
 /**
  * @property Buyable $product
@@ -32,8 +33,9 @@ use Vanilo\Cart\Traits\CheckoutItemFunctions;
  */
 class CartItem extends Model implements CartItemContract, Adjustable
 {
-	use HasAdjustmentsViaRelation;
-	use RecalculatesAdjustments;
+	#use HasAdjustmentsViaRelation;
+	#use RecalculatesAdjustments;
+	use HasModifiers;
 	use ProductItem;
 	use CheckoutItemFunctions;
 
@@ -53,13 +55,18 @@ class CartItem extends Model implements CartItemContract, Adjustable
 		parent::boot();
 
 		# converter valores decimal em floats, eram carregados como string...
-		static::retrieved(function ($model) {
+		/* static::retrieved(function ($model) {
 			$model->cartItemInit();
-		});
+		}); */
 
 		static::deleting(function ($model) {
 			$model->removeAllAdjustments();
 		});
+	}
+
+	public function cart()
+	{
+		return $this->belongsTo(Cart::class);
 	}
 
 	public function cartItemInit()
