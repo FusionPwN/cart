@@ -60,7 +60,7 @@ class Cart extends Model implements CartContract, Adjustable
 		});
 
 		static::deleting(function ($model) {
-			$model->removeAllAdjustments();
+			#$model->removeAllAdjustments();
 			$model->clear();
 		});
 	}
@@ -144,9 +144,11 @@ class Cart extends Model implements CartContract, Adjustable
 
 		foreach ($this->items as &$item) {
 			$item->cartItemInit();
-		}
+		} */
 
-		dd($this->items); */
+		#debug($this->items);
+
+		#dd($this, $this->items);
 
 		$items = [
 			'cart' => clone $this->items,

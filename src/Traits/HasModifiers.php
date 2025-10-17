@@ -25,4 +25,9 @@ trait HasModifiers
 	{
 		return $this->modifiers();
 	}
+
+	public function resetModifiers(): void
+	{
+		$this->modifiers = new ModifierCollection($this);
+	}
 }

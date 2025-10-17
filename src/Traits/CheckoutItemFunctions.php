@@ -131,7 +131,8 @@ trait CheckoutItemFunctions
 
 		$adjustments = $this->adjustments()->getIterator();
 
-		if ($skip) {
+		# ADJUSTMENTS NO LONGER EXIST
+		/* if ($skip) {
 			$required_cart_adjustments = AdjustmentProxy::where('adjustable_type', $this instanceof OrderItem ? Order::class : Cart::class)
 				->where('adjustable_id', $this instanceof OrderItem ? $this->order_id : $this->cart_id)
 				->whereIn('type', [AdjustmentTypeProxy::OFERTA_PERCENTAGEM()->value()])
@@ -141,7 +142,7 @@ trait CheckoutItemFunctions
 			foreach ($required_cart_adjustments as $cart_adjustment) {
 				$adjustments->append($cart_adjustment);
 			}
-		}
+		} */
 
 		if (isset($adjustments)) {
 			foreach ($adjustments as $adjustment) {

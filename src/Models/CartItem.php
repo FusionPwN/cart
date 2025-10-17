@@ -55,9 +55,9 @@ class CartItem extends Model implements CartItemContract, Adjustable
 			$model->cartItemInit();
 		}); */
 
-		static::deleting(function ($model) {
+		/* static::deleting(function ($model) {
 			$model->removeAllAdjustments();
-		});
+		}); */
 	}
 
 	public function cart()

@@ -47,6 +47,7 @@ use App\Models\Admin\ZoneGroup;
 use Vanilo\Adjustments\Adjusters\CouponFreebieOffer;
 use Vanilo\Adjustments\Adjusters\CouponFreeProduct;
 use Vanilo\Adjustments\Adjusters\SimplePaymentFee;
+use Vanilo\Cart\Helpers\Modifier;
 use Vanilo\Payment\Models\PaymentMethod;
 use Vanilo\Product\Models\ProductProxy;
 
@@ -448,8 +449,6 @@ trait CheckoutFunctions
 						$item->adjustments()->create(new DiscountScalablePercNum($this, $item, $discount_data, $item->properties->discount_level, $item->quantity));
 					}
 				}
-
-				#dd($item->adjustments());
 			}
 		}
 
@@ -460,7 +459,7 @@ trait CheckoutFunctions
 			}
 		}
 
-		$this->updateShippingFee(); //Está repetido pois se não calcular o shipping aqui o cupão de oferta de portes não funciona
+		#$this->updateShippingFee(); //Está repetido pois se não calcular o shipping aqui o cupão de oferta de portes não funciona
 
 		if ($this->coupons->first()) {
 			$this->validateCoupon($this->coupons->first());
@@ -474,11 +473,11 @@ trait CheckoutFunctions
 			}
 		}
 
-		$this->updateShippingFee();
+		#$this->updateShippingFee();
 		if (null !== $this->id) {
 			$this->updateFeePackagingBag();
 		}
-		$this->updatePaymentFee();
+		#$this->updatePaymentFee();
 		$this->updateClientCard();
 
 		if ($this instanceof Cart && !$this->state->isAbandoned()) {
@@ -761,7 +760,7 @@ trait CheckoutFunctions
 		return false;
 	}
 
-	public function getShippingAdjustment(): ?Adjustment
+	public function getShippingAdjustment(): ?Modifier
 	{
 		$shippingAdjustment = $this->getAdjustmentByType(AdjustmentTypeProxy::SHIPPING());
 		$freeShippingAdjustmentCoupon = $this->getAdjustmentByType(AdjustmentTypeProxy::COUPON_FREE_SHIPPING());
@@ -785,7 +784,7 @@ trait CheckoutFunctions
 		return $shippingAdjustment;
 	}
 
-	public function getClientCardAdjustment(): ?Adjustment
+	public function getClientCardAdjustment(): ?Modifier
 	{
 		$clientCardAdjustment = $this->getAdjustmentByType(AdjustmentTypeProxy::CLIENT_CARD());
 
@@ -796,7 +795,7 @@ trait CheckoutFunctions
 		return $clientCardAdjustment;
 	}
 
-	public function getPaymentAdjustment(): ?Adjustment
+	public function getPaymentAdjustment(): ?Modifier
 	{
 		$paymentAdjustment = $this->getAdjustmentByType(AdjustmentTypeProxy::PAYMENT_FEE());
 
@@ -807,7 +806,7 @@ trait CheckoutFunctions
 		return $paymentAdjustment;
 	}
 
-	public function getFeePackagingBagAdjustment(): ?Adjustment
+	public function getFeePackagingBagAdjustment(): ?Modifier
 	{
 		$feePackagingBagAdjustment = $this->getAdjustmentByType(AdjustmentTypeProxy::FEE_PACKAGING_BAG());
 

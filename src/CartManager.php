@@ -20,6 +20,7 @@ use Vanilo\Cart\Models\Cart;
 use Konekt\Address\Models\Country;
 use Vanilo\Adjustments\Contracts\AdjustmentType;
 use Vanilo\Adjustments\Models\Adjustment;
+use Vanilo\Cart\Helpers\Modifier;
 use Vanilo\Cart\Models\CartProxy;
 use Vanilo\Contracts\Buyable;
 use Vanilo\Framework\Models\PaymentMethod;
@@ -388,8 +389,7 @@ class CartManager implements CartManagerContract
 			];
 		}
 
-		if(isset($attributes))
-		{
+		if (isset($attributes)) {
 			$attributes['lang'] = app()->getLocale();
 		} else {
 			$attributes = [
@@ -454,6 +454,11 @@ class CartManager implements CartManagerContract
 		return $this->model()->updateShippingFee();
 	}
 
+	public function updatePaymentFee()
+	{
+		return $this->model()->updatePaymentFee();
+	}
+
 	public function updateClientCard()
 	{
 		return $this->model()->updateClientCard();
@@ -464,17 +469,17 @@ class CartManager implements CartManagerContract
 		return $this->model()->updateAdjustments();
 	}
 
-	public function getShippingAdjustment(): Adjustment|Modifier|null
+	public function getShippingAdjustment(): ?Modifier
 	{
 		return $this->exists() ? $this->model()->getShippingAdjustment() : null;
 	}
 
-	public function getClientCardAdjustment(): Adjustment|Modifier|null
+	public function getClientCardAdjustment(): ?Modifier
 	{
 		return $this->model()->getClientCardAdjustment();
 	}
 
-	public function getPaymentAdjustment(): Adjustment|Modifier|null
+	public function getPaymentAdjustment(): ?Modifier
 	{
 		return $this->exists() ? $this->model()->getPaymentAdjustment() : null;
 	}

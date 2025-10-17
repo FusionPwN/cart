@@ -3,6 +3,7 @@
 namespace Vanilo\Cart\Helpers;
 
 use Illuminate\Support\Collection;
+use Vanilo\Adjustments\Contracts\Adjustable;
 use Vanilo\Adjustments\Contracts\Adjuster;
 use Vanilo\Adjustments\Contracts\AdjustmentType;
 
@@ -27,13 +28,24 @@ class ModifierCollection extends Collection
 		$this->add($modifier);
 	}
 
-	public function byType(string|AdjustmentType $type): ?Collection
+	public function byType(AdjustmentType $type): Collection
 	{
-		if (is_string($type)) {
-			return $this->filter(fn(Modifier $modifier) => $modifier->getType()->value === $type);
-		} else {
-			return $this->filter(fn(Modifier $modifier) => $modifier->getType()->equals($type));
+		$result = new self($this->adjustable_model);
+
+		# $this->filters fucks up and puts the modifier on the adjustable model variable wtf had to do it this way...
+		/* $filtered = $this->filter(function (Modifier $modifier) use ($type) {
+			return $modifier->getType()->equals($type);
+		}); */
+
+		$filtered = array_filter($this->all(), function (Modifier $modifier) use ($type) {
+			return $modifier->getType()->equals($type);
+		});
+
+		foreach ($filtered as $modifier) {
+			$result->add($modifier);
 		}
+
+		return $result;
 	}
 
 	public function total(array $excludes = []): float
