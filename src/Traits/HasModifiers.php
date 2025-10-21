@@ -9,9 +9,16 @@ trait HasModifiers
 {
 	public ModifierCollection $modifiers;
 
-	public function __construct()
+	public function __construct(array $attributes = [])
 	{
-		parent::__construct();
+		if ($this instanceof \Vanilo\Order\Models\Order) {
+			// Set default status in case there was none given
+			if (!isset($attributes['status'])) {
+				$this->setDefaultOrderStatus();
+			}
+			
+			parent::__construct($attributes);
+		}
 
 		$this->modifiers = new ModifierCollection($this);
 	}
