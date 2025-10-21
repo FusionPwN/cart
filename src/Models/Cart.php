@@ -67,17 +67,19 @@ class Cart extends Model implements CartContract, Adjustable
 
 	public function cartInit(bool $override_state = false)
 	{
-		$this->buildCartGlobals();
 		if ($this->state->isRequiresUpdate()) {
 			$this->resetState();
+			$this->buildCartGlobals();
 			$this->unfoldCartItemsForDiscounts();
+			$this->load('items');
 		}
-		$this->buildCartGlobals();
-		$this->updateAdjustments();
 
 		foreach ($this->items as &$item) {
 			$item->cartItemInit();
 		}
+
+		$this->buildCartGlobals();
+		$this->updateAdjustments();
 	}
 
 	public function setLoadingState()

@@ -51,9 +51,9 @@ class CartItem extends Model implements CartItemContract, Adjustable
 		parent::boot();
 
 		# converter valores decimal em floats, eram carregados como string...
-		/* static::retrieved(function ($model) {
+		static::retrieved(function ($model) {
 			$model->cartItemInit();
-		}); */
+		});
 
 		/* static::deleting(function ($model) {
 			$model->removeAllAdjustments();

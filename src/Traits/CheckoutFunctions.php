@@ -370,8 +370,6 @@ trait CheckoutFunctions
 						}
 					}
 				}
-
-				$this->load('items');
 			}
 		}
 	}
