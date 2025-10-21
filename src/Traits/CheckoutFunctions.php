@@ -365,7 +365,7 @@ trait CheckoutFunctions
 						}
 
 						foreach ($items as $item) {
-							$item->removeAllAdjustments();
+							#$item->removeAllAdjustments();
 							$item->delete();
 						}
 					}
@@ -522,7 +522,7 @@ trait CheckoutFunctions
 		});
 	}
 
-	public function removeAdjustment(Adjustment $adjustment = null, AdjustmentType $type = null)
+	public function removeAdjustment(?Modifier $adjustment, ?AdjustmentType $type = null)
 	{
 		if (isset($type)) {
 			$type = Str::upper($type->value());
@@ -1003,7 +1003,6 @@ trait CheckoutFunctions
 		session()->forget('checkout.coupon-selected_gifts');
 		session()->save();
 
-		$this->removeCouponAdjustments();
 		if (count($this->coupons) > 0) {
 			$this->coupons()->sync([]);
 		}

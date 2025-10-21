@@ -18,6 +18,7 @@ use Vanilo\Adjustments\Models\AdjustmentTypeProxy;
 use Vanilo\Cart\Models\Cart;
 use Illuminate\Support\Str;
 use Vanilo\Adjustments\Models\AdjustmentProxy;
+use Vanilo\Cart\Helpers\Modifier;
 use Vanilo\Cart\Models\CartItem;
 use Vanilo\Contracts\Buyable;
 
@@ -165,7 +166,7 @@ trait CheckoutItemFunctions
 		return $this->product->preventsFreeShipping();
 	}
 
-	public function getAdjustmentByType(AdjustmentType $type = null)
+	public function getAdjustmentByType(?AdjustmentType $type)
 	{
 		if (!isset($type)) {
 			throw new Exception(
@@ -178,7 +179,7 @@ trait CheckoutItemFunctions
 		return $this->adjustments()->byType($type)->first();
 	}
 
-	public function removeAdjustment(Adjustment $adjustment = null, AdjustmentType $type = null)
+	public function removeAdjustment(?Modifier $adjustment, ?AdjustmentType $type = null)
 	{
 		if (isset($type)) {
 			$type = Str::upper($type->value());
