@@ -429,8 +429,6 @@ class Cart extends Model implements CartContract, Adjustable
 	public function removeItem($item)
 	{
 		if ($item) {
-			$item->refresh();
-			$item->removeAllAdjustments();
 			$item->delete();
 		}
 

@@ -377,12 +377,8 @@ trait CheckoutFunctions
 	public function updateAdjustments()
 	{
 		debug('STARTING ADJUSTMENT UPDATES');
-		#$this->removeCouponAdjustments();
-		#$this->removeAllAdjustments();
 
 		foreach ($this->items as $item) {
-			#$item->removeAllAdjustments();
-
 			if ($this instanceof Order && $item->overridesPrice()) {
 				#keep empty
 			} else {
