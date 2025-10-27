@@ -215,12 +215,6 @@ trait CheckoutItemFunctions
 			);
 		}
 
-		$intervalAdjustment = $this->adjustments()->byType(AdjustmentTypeProxy::INTERVAL_DISCOUNT())->first();
-
-		if (isset($intervalAdjustment)) {
-			$this->removeAdjustment($intervalAdjustment);
-		}
-
 		$price_interval = $this->product->getInterval($this->quantity());
 
 		if ($price_interval) {
@@ -242,11 +236,6 @@ trait CheckoutItemFunctions
 		}
 
 		$store_discount = (float) Cache::get('settings.store_discount');
-		$storeAdjustment = $this->adjustments()->byType(AdjustmentTypeProxy::STORE_DISCOUNT())->first();
-
-		if (isset($storeAdjustment)) {
-			$this->removeAdjustment($storeAdjustment);
-		}
 
 		if ($store_discount > 0) {
 			if ($this->product->preventsStoreDiscount() || (Cache::get('settings.campaign_ignore_store_discount') == 1 && (count($this->product->discountTreeWithTypePivot) > 0 || $this->product->validDirectDiscount()))) {
@@ -272,12 +261,6 @@ trait CheckoutItemFunctions
 					$adjustable::class
 				)
 			);
-		}
-
-		$directAdjustment = $this->adjustments()->byType(AdjustmentTypeProxy::DIRECT_DISCOUNT())->first();
-
-		if (isset($directAdjustment)) {
-			$this->removeAdjustment($directAdjustment);
 		}
 
 		if ($this->product->validDirectDiscount() && (count($this->product->discountTreeWithTypePivot) == 0 || (count($this->product->discountTreeWithTypePivot) > 0 && $this->product->discountTreeWithTypePivot->first()->can_stack_direct_discount == 1))) {

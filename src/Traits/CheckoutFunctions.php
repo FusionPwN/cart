@@ -365,7 +365,6 @@ trait CheckoutFunctions
 						}
 
 						foreach ($items as $item) {
-							#$item->removeAllAdjustments();
 							$item->delete();
 						}
 					}
@@ -706,7 +705,6 @@ trait CheckoutFunctions
 			}
 		}
 
-		$this->removeAdjustment(null, AdjustmentTypeProxy::SHIPPING());
 		$shippingAdjustment = $this->adjustments()->create(new SimpleShippingFee($this->shipping, $price, $threshold, $cause));
 
 		return $shippingAdjustment;
@@ -719,8 +717,6 @@ trait CheckoutFunctions
 		}
 
 		$balance = $this->card->balance() ?? 0;
-
-		$this->removeAdjustment(null, AdjustmentTypeProxy::CLIENT_CARD());
 
 		$clientCardAdjustment = $this->adjustments()->create(new ClientCard($balance, $this->card, $this));
 
@@ -735,8 +731,6 @@ trait CheckoutFunctions
 
 		$fee = $this->payment->fee ?? 0;
 
-		$this->removeAdjustment(null, AdjustmentTypeProxy::PAYMENT_FEE());
-
 		$paymentAdjustment = $this->adjustments()->create(new SimplePaymentFee($this->payment, $fee));
 
 		return $paymentAdjustment;
@@ -745,7 +739,6 @@ trait CheckoutFunctions
 	public function updateFeePackagingBag()
 	{
 		if (Cache::get('settings.checkout_packaging_of_the_order') !== null && Cache::get('settings.checkout_packaging_of_the_order') != "") {
-			$this->removeAdjustment(null, AdjustmentTypeProxy::FEE_PACKAGING_BAG());
 			$feePackagingBagAdjustment = $this->adjustments()->create(new FeePackagingBag(Cache::get('settings.checkout_packaging_of_the_order')));
 
 			return $feePackagingBagAdjustment;
