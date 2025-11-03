@@ -678,7 +678,7 @@ trait CheckoutFunctions
 						// Set some options - we are passing in a useragent too here
 						curl_setopt_array($curl, array(
 							CURLOPT_RETURNTRANSFER => 1,
-							CURLOPT_URL => 'http://codpostal.coolsis.pt/?codpostal1=' . $postalCodeArr[0] . '&codpostal2=' . $postalCodeArr[1],
+							CURLOPT_URL => config('coolsis.codpostal.url') . '/?codpostal1=' . $postalCodeArr[0] . '&codpostal2=' . $postalCodeArr[1],
 						));
 						// Send the request & save response to $resp
 						$resp = curl_exec($curl);
