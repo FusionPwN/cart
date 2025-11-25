@@ -94,4 +94,9 @@ class Modifier
 	{
 		return $this->amount < 0;
 	}
+
+	public function isPromo(): bool
+	{
+		return AdjustmentTypeProxy::IsPromo($this->type);
+	}
 }

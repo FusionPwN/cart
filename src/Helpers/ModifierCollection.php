@@ -60,4 +60,15 @@ class ModifierCollection extends Collection
 
 		return floatval($collection->sum('amount'));
 	}
+
+	public function hasPromo(): bool
+	{
+		foreach ($this->all() as $modifier) {
+			if ($modifier->isPromo()) {
+				return true;
+			}
+		}
+
+		return false;
+	}
 }
