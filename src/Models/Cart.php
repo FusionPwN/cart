@@ -34,6 +34,7 @@ use Vanilo\Cart\Helpers\Modifier;
 use Vanilo\Cart\Traits\HasModifiers;
 use Vanilo\Product\Models\ProductProxy;
 use Vanilo\Product\Models\ProductStateProxy;
+use App\Classes\CustomerCardService;
 
 class Cart extends Model implements CartContract, Adjustable
 {
@@ -478,42 +479,18 @@ class Cart extends Model implements CartContract, Adjustable
 
 		if (Cache::get('settings.client_card') == 1) {
 			if ($this->getItems() !== null && count($this->getItems()) > 0) {
-				foreach ($this->getItems() as $item) {
-					$p_discounts = $item->product->validDiscountTree;
+				$customerCardService = new CustomerCardService();
+				$items = $this->getItems()->map(function ($item){
+					$itemArray = $item->toArray();
 
-					$percentageCardMsrm = Cache::get('settings.pecentage_credited_to_the_card_msrm');
-					$percentageCard = Cache::get('settings.pecentage_credited_to_the_card');
+					$itemArray['price'] = $item->prices->price;
+					$itemArray['original_price'] = $item->prices->original_price;
+					$itemArray['is_promo'] = $item->adjustments()->hasPromo();
 
-					if (isset($p_discounts) && count($p_discounts) > 0) {
-						foreach ($p_discounts as $discount) {
-							if (isset($discount->value_card) && $discount->value_card > 0) {
-								if ($discount->type_card == "%") {
-									if (($item->product->msrm == 1 || $item->product->msrmv == 1) && Cache::get('settings.pecentage_credited_to_the_card_msrm') !== null && Cache::get('settings.pecentage_credited_to_the_card_msrm') !== '') {
-										$percentageCardMsrm = $percentageCardMsrm + $discount->value_card;
-									} else {
-										$percentageCard = $percentageCard + $discount->value_card;
-									}
-								} else {
-									$acumulatedValue += $discount->value_card;
-								}
-							}
+					return $itemArray;
+				})->toArray();
 
-							break;
-						}
-					}
-
-					if (($item->product->msrm == 1 || $item->product->msrmv == 1) && Cache::get('settings.pecentage_credited_to_the_card_msrm') !== null && Cache::get('settings.pecentage_credited_to_the_card_msrm') !== '') {
-						if (Cache::get('settings.max_pvp_msrm_to_the_card') !== null && Cache::get('settings.max_pvp_msrm_to_the_card') !== '') {
-							if ($item->prices->price <= (float) Cache::get('settings.max_pvp_msrm_to_the_card')) {
-								$acumulatedValue += Utilities::RoundPrice(($percentageCardMsrm / 100) * $item->prices->price);
-							}
-						} else {
-							$acumulatedValue += Utilities::RoundPrice(($percentageCardMsrm / 100) * $item->prices->price);
-						}
-					} else {
-						$acumulatedValue += Utilities::RoundPrice(($percentageCard / 100) * $item->prices->price);
-					}
-				}
+				$acumulatedValue = $customerCardService->calculate('online',$items,true,$this->id);
 			}
 		}
 

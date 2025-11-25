@@ -388,7 +388,7 @@ trait CheckoutFunctions
 
 		foreach ($this->applyableDiscounts as $discount) {
 			$discount_data = $discount['discount_data'];
-			$item_count = $discount['cart_items']->sum('quantity');
+			$item_count = $discount['cart_items']->sum(fn($item) => $item->quantity());
 			$items_total_value = $discount['cart_items']->sum('total');
 
 			if ($discount['tag'] == 'oferta_barato' || $discount['tag'] == 'oferta_prod') {
