@@ -6,6 +6,7 @@ use Illuminate\Support\Arr;
 use Vanilo\Adjustments\Contracts\Adjustable;
 use Vanilo\Adjustments\Contracts\Adjuster;
 use Vanilo\Adjustments\Contracts\AdjustmentType;
+use Vanilo\Adjustments\Models\AdjustmentTypeProxy;
 
 class Modifier
 {
