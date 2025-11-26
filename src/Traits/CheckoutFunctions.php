@@ -264,31 +264,29 @@ trait CheckoutFunctions
 					$max_level = $item_count > count($discount_data->properties->levels) ? count($discount_data->properties->levels) - 1 : $item_count - 1;
 					$repeat_count = intdiv($item_count, count($discount_data->properties->levels));
 
-					for ($i = 0; $i < $repeat_count; $i++) {
+					for ($x = 0; $x < $item_count - $repeat_count; $x++) {
 						$level_list[] = [
 							'level' => -1,
 							'value' => 0
 						];
+					}
+
+					for ($i = 0; $i < $repeat_count; $i++) {
 						$level_list[] = [
 							'level' => $max_level,
 							'value' => $discount_data->properties->levels[$max_level]
 						];
 					}
+					
+					$remainder = $item_count % count($discount_data->properties->levels);
 
-					# if remainder > 0 it means it has to had the first level again
-					if ($item_count % count($discount_data->properties->levels) > 0) {
-						$remaining_levels = $item_count - count($level_list);
-
-						for ($i = 0; $i < $remaining_levels; $i++) {
-							$level_count = $level_count > count($discount_data->properties->levels) - 1 ? 0 : $level_count;
-							$level_list[] = [
-								'level' => $level_count,
-								'value' => $discount_data->properties->levels[$level_count] # este valor apenas serve para a ordenaçao
-							];
-
-							$level_count++;
-						}
-					}
+					for($z = 0; $z < $remainder; $z++) {
+						$max_level = $remainder - 1;
+						$level_list[$item_count-1 -$repeat_count] = [
+							'level' => $max_level,
+							'value' => $discount_data->properties->levels[$max_level]
+						];
+					} 
 				}
 
 				$level_list = collect($level_list)->sortBy('value')->values()->all();
