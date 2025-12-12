@@ -81,7 +81,7 @@ class Modifier
 		$this->amount = $amount;
 	}
 
-	public function getData(?string $key)
+	public function getData(?string $key = null)
 	{
 		return Arr::get($this->data, $key);
 	}
