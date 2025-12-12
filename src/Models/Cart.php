@@ -477,6 +477,10 @@ class Cart extends Model implements CartContract, Adjustable
 	{
 		$acumulatedValue = 0;
 
+		foreach ($this->items as &$item) {
+			$item->cartItemInit();
+		}
+
 		if (Cache::get('settings.client_card') == 1) {
 			if ($this->getItems() !== null && count($this->getItems()) > 0) {
 				$customerCardService = new CustomerCardService();
