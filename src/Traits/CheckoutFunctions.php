@@ -707,6 +707,7 @@ trait CheckoutFunctions
 				// Se o total da encomenda >= limite -> oferta
 				if (!$this->itemsPreventFreeShipping() && $this->total() >= $this->shipping->free_shipping_over) {
 					$this->shipping->price = 0;
+					$price = 0;
 				} else {
 					$this->shipping->price = $this->shipping->price ?? 0;
 				}
