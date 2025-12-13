@@ -704,6 +704,7 @@ trait CheckoutFunctions
 		} else if ($this->shipping->isStorePickup()) {
 			// Verifica se tem definido o limite para oferta
 			if (isset($this->shipping->free_shipping_over) && $this->shipping->free_shipping_over > 0) {
+				$threshold = (float) $this->shipping->free_shipping_over;
 				// Se o total da encomenda >= limite -> oferta
 				if (!$this->itemsPreventFreeShipping() && $this->total() >= $this->shipping->free_shipping_over) {
 					$this->shipping->price = 0;
