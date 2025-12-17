@@ -487,8 +487,8 @@ class Cart extends Model implements CartContract, Adjustable
 				$items = $this->getItems()->map(function ($item){
 					$itemArray = $item->toArray();
 
-					$itemArray['price'] = $item->prices->price;
-					$itemArray['original_price'] = $item->prices->original_price;
+					$itemArray['price'] = $item->prices->price_unit;
+					$itemArray['original_price'] = $item->prices->original_price_unit;
 					$itemArray['is_promo'] = $item->adjustments()->hasPromo();
 
 					return $itemArray;
