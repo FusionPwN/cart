@@ -373,8 +373,6 @@ trait CheckoutFunctions
 
 	public function updateAdjustments()
 	{
-		debug('STARTING ADJUSTMENT UPDATES');
-
 		foreach ($this->items as $item) {
 			if ($this instanceof Order && $item->overridesPrice()) {
 				#keep empty
@@ -474,8 +472,6 @@ trait CheckoutFunctions
 		if ($this instanceof Cart && !$this->state->isAbandoned()) {
 			$this->resetState();
 		}
-
-		debug('FINISHED ADJUSTMENT UPDATES');
 	}
 
 	public function itemsPreventFreeShipping($withItems = false)
