@@ -969,6 +969,13 @@ trait CheckoutFunctions
 
 		foreach ($this->items as $item) {
 			if (!isset($validProducts) || (isset($validProducts) && $validProducts->contains('id', $item->product_id))) {
+				if($coupon->ignore_store_discount == 1) {
+					$storeAdjustment = $item->adjustments()->byType(AdjustmentTypeProxy::STORE_DISCOUNT())->first();
+
+					if (isset($storeAdjustment)) {
+						$item->removeAdjustment($storeAdjustment);
+					}
+				}
 				if ($coupon->type == CouponType::PERCENTAGE()) {
 					$adjustment = $item->adjustments()->create(new CouponPerc($this, $item, $coupon));
 
