@@ -71,4 +71,11 @@ class ModifierCollection extends Collection
 
 		return false;
 	}
+
+	public function remove(Modifier $modifier): void
+	{
+		$this->items = array_filter($this->items, function (Modifier $item) use ($modifier) {
+			return $item !== $modifier;
+		});
+	}
 }
