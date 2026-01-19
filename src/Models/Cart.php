@@ -490,7 +490,8 @@ class Cart extends Model implements CartContract, Adjustable
 					$itemArray['price'] = $item->prices->price_unit;
 					$itemArray['original_price'] = $item->prices->original_price_unit;
 					$itemArray['is_promo'] = $item->adjustments()->hasPromo();
-
+					$itemArray['vat'] = $item->product->VAT_rate ?? 23;
+					$itemArray['date'] = Carbon::now()->toDateTimeString();
 					return $itemArray;
 				})->toArray();
 
