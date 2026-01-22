@@ -473,10 +473,10 @@ class Cart extends Model implements CartContract, Adjustable
 		$this->conflictingDiscounts = $this->getConflictingDiscounts();
 	}
 
-	public function totalAccumulatedCard(): float
+	public function totalAccumulatedCard(): array
 	{
 		$acumulatedValue = 0;
-
+		$string_dates = [];
 		foreach ($this->items as &$item) {
 			$item->cartItemInit();
 		}
@@ -494,12 +494,14 @@ class Cart extends Model implements CartContract, Adjustable
 					$itemArray['date'] = Carbon::now()->toDateTimeString();
 					return $itemArray;
 				})->toArray();
-
-				$acumulatedValue = $customerCardService->calculate('online',$items,true,$this->id);
+				
+				$cardCampaignPoints = $customerCardService->calculate('online',$items,true,$this->id);
+				$balance_available_dates = $cardCampaignPoints['balance_available_dates'] ?? [];
+				$acumulatedValue = (float) $cardCampaignPoints['points'];
 			}
 		}
 
-		return $acumulatedValue;
+		return ['points' => $acumulatedValue, 'balance_available_dates' => $balance_available_dates];
 	}
 
 	public function totalWithCard(): float
