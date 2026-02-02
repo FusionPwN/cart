@@ -476,6 +476,7 @@ class Cart extends Model implements CartContract, Adjustable
 	public function totalAccumulatedCard(): array
 	{
 		$acumulatedValue = 0;
+		$balance_available_dates = [];
 		$string_dates = [];
 		foreach ($this->items as &$item) {
 			$item->cartItemInit();
