@@ -714,6 +714,21 @@ trait CheckoutFunctions
 			}
 		}
 
+		if($this->shipping->slug == "ctt_gnr_unidade")
+		{
+
+			if ($this->itemsTotal() >= 0 && $this->itemsTotal() < 20) {
+				$taxa = 2.00;
+			} elseif ($this->itemsTotal() >= 20 && $this->itemsTotal() < 30) {
+				$taxa = 1.50;
+			} else {
+				$taxa = 0.00;
+			}
+
+			$this->shipping->price = $this->shipping->price + $taxa;
+			$price = $price + $taxa;
+		}
+
 		$shippingAdjustment = $this->adjustments()->create(new SimpleShippingFee($this->shipping, $price, $threshold, $cause));
 
 		return $shippingAdjustment;
