@@ -60,6 +60,9 @@ trait CheckoutFunctions
 	public $couponValidator;
 	public $activeCoupon;
 	public $shippingAddress;
+	public $shippingBag;
+	public $shippingBagValue;
+
 
 	public $validationErrors = [];
 
@@ -463,7 +466,7 @@ trait CheckoutFunctions
 		}
 
 		#$this->updateShippingFee();
-		if (null !== $this->id) {
+		if (null !== $this->id && Cache::get('settings.checkout_packaging_of_the_order') !== null && Cache::get('settings.checkout_packaging_of_the_order') != "") {
 			$this->updateFeePackagingBag();
 		}
 		#$this->updatePaymentFee();
@@ -764,6 +767,10 @@ trait CheckoutFunctions
 	{
 		if (Cache::get('settings.checkout_packaging_of_the_order') !== null && Cache::get('settings.checkout_packaging_of_the_order') != "") {
 			$feePackagingBagAdjustment = $this->adjustments()->create(new FeePackagingBag(Cache::get('settings.checkout_packaging_of_the_order')));
+
+			return $feePackagingBagAdjustment;
+		} else if($this->shippingBag == 1) {
+			$feePackagingBagAdjustment = $this->adjustments()->create(new FeePackagingBag($this->shippingBagValue));
 
 			return $feePackagingBagAdjustment;
 		}

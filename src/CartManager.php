@@ -449,9 +449,24 @@ class CartManager implements CartManagerContract
 		return $this->model()->setShippingAddress($shippingAddress);
 	}
 
+	public function setShippingBag($bag)
+	{
+		return $this->model()->setShippingBag($bag);
+	}
+
+	public function setShippingBagValue($bagVal)
+	{
+		return $this->model()->setShippingBagValue($bagVal);
+	}
+
 	public function updateShippingFee()
 	{
 		return $this->model()->updateShippingFee();
+	}
+
+	public function updateFeePackagingBag()
+	{
+		return $this->model()->updateFeePackagingBag();
 	}
 
 	public function updatePaymentFee()
