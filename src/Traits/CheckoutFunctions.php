@@ -563,6 +563,16 @@ trait CheckoutFunctions
 		$this->shippingAddress = $shippingAddress;
 	}
 
+	public function setShippingBag($shippingBag)
+	{
+		$this->shippingBag = $shippingBag;
+	}
+
+	public function setShippingBagValue($shippingBagValue)
+	{
+		$this->shippingBagValue = $shippingBagValue;
+	}
+
 	public function getAdjustmentByType(AdjustmentType $type = null)
 	{
 		if (!isset($type)) {
