@@ -727,7 +727,7 @@ trait CheckoutFunctions
 			}
 		}
 
-		if($this->shipping->slug == "ctt_gnr_unidade")
+		if(config('coolsis.ssgnr.active'))
 		{
 
 			if ($this->itemsTotal() >= 0 && $this->itemsTotal() < 20) {
