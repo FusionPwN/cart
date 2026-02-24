@@ -646,8 +646,32 @@ trait CheckoutFunctions
 					$threshold = $havePriceInPostalCode->first()->value ?? null;
 					$cause = 'order_value';
 				}
+				if ($this->shipping->use_distance_pricing == 1) {
 
-				$price = $havePriceInPostalCode->first()->shipping_price;
+					$geoService = app(\App\Services\GeolocationService::class);
+
+					$distance = $geoService->distanceFromPharmacy($this->shippingAddress);
+
+					if (!$distance) {
+						throw new Exception('Não foi possível calcular a distância');
+					}
+
+					$rule = $this->shipping->distances
+						->sortBy('min_km')
+						->first(function ($item) use ($distance) {
+							return $item->min_km <= $distance &&
+								(is_null($item->max_km) || $item->max_km >= $distance);
+						});
+
+					if (!$rule) {
+						throw new Exception('Entrega não disponível para esta distância');
+					}
+
+					$price = $rule->price;
+				} else {
+					//Encontrou um resultado coloca o preço que está definido
+					$price = $havePriceInPostalCode->first()->shipping_price;
+				}
 			} else {
 				$postalCodeArr = explode('-', $this->shippingAddress['postalcode']);
 
@@ -708,6 +732,30 @@ trait CheckoutFunctions
 						//Close request to clear up some resources
 						curl_close($curl);
 					}
+				}
+
+				if ($this->shipping->use_distance_pricing == 1) {
+
+					$geoService = app(\App\Services\GeolocationService::class);
+
+					$distance = $geoService->distanceFromPharmacy($this->shippingAddress);
+
+					if (!$distance) {
+						throw new Exception('Não foi possível calcular a distância');
+					}
+
+					$rule = $this->shipping->distances
+						->sortBy('min_km')
+						->first(function ($item) use ($distance) {
+							return $item->min_km <= $distance &&
+								(is_null($item->max_km) || $item->max_km >= $distance);
+						});
+
+					if (!$rule) {
+						throw new Exception('Entrega não disponível para esta distância');
+					}
+
+					$price = $rule->price;
 				}
 			}
 		} else if ($this->shipping->isStorePickup()) {
