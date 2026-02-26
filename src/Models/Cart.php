@@ -488,8 +488,13 @@ class Cart extends Model implements CartContract, Adjustable
 				$items = $this->getItems()->map(function ($item){
 					$itemArray = $item->toArray();
 
-					$itemArray['price'] = $item->prices->price_unit;
-					$itemArray['original_price'] = $item->prices->original_price_unit;
+					if($item->product_type == "prescription"){
+						$itemArray['price'] = 0;
+						$itemArray['original_price'] = 0;
+					} else {
+						$itemArray['price'] = $item->prices->price_unit;
+						$itemArray['original_price'] = $item->prices->original_price_unit;
+					}
 					$itemArray['is_promo'] = $item->adjustments()->hasPromo();
 					$itemArray['vat'] = $item->product->VAT_rate ?? 23;
 					$itemArray['date'] = Carbon::now()->toDateTimeString();
