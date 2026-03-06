@@ -649,8 +649,11 @@ trait CheckoutFunctions
 				if ($this->shipping->use_distance_pricing == 1) {
 
 					$geoService = app(\App\Services\GeolocationService::class);
+					$shippingAddressForGeo = is_array($this->shippingAddress)
+						? $this->shippingAddress
+						: (method_exists($this->shippingAddress, 'toArray') ? $this->shippingAddress->toArray() : (array) $this->shippingAddress);
 
-					$distance = $geoService->distanceFromPharmacy($this->shippingAddress);
+					$distance = $geoService->distanceFromPharmacy($shippingAddressForGeo);
 
 					if (!$distance) {
 						throw new Exception('Não foi possível calcular a distância');
@@ -737,8 +740,11 @@ trait CheckoutFunctions
 				if ($this->shipping->use_distance_pricing == 1) {
 
 					$geoService = app(\App\Services\GeolocationService::class);
+					$shippingAddressForGeo = is_array($this->shippingAddress)
+						? $this->shippingAddress
+						: (method_exists($this->shippingAddress, 'toArray') ? $this->shippingAddress->toArray() : (array) $this->shippingAddress);
 
-					$distance = $geoService->distanceFromPharmacy($this->shippingAddress);
+					$distance = $geoService->distanceFromPharmacy($shippingAddressForGeo);
 
 					if (!$distance) {
 						throw new Exception('Não foi possível calcular a distância');
