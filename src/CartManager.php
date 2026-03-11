@@ -175,6 +175,11 @@ class CartManager implements CartManagerContract
 		return $this->exists() ? $this->model()->subTotal() : 0;
 	}
 
+	public function itemsTotal(): float
+	{
+		return $this->exists() ? $this->model()->itemsTotal() : 0;
+	}
+
 	/**
 	 * @inheritDoc
 	 */
