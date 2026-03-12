@@ -193,6 +193,11 @@ class CartManager implements CartManagerContract
 		return $this->exists() ? $this->model()->totalAccumulatedCard() : 0;
 	}
 
+	public function totalAccumulatedCompany(): array
+	{
+		return $this->exists() ? $this->model()->totalAccumulatedCompany() : 0;
+	}
+
 	/**
 	 * @inheritDoc
 	 */

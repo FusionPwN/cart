@@ -510,6 +510,45 @@ class Cart extends Model implements CartContract, Adjustable
 		return ['points' => $acumulatedValue, 'balance_available_dates' => $balance_available_dates];
 	}
 
+	public function totalAccumulatedCompany(): array
+	{
+		$accumulatedValue = 0;
+		$percentage = 0;
+		$eligibleSubtotal = 0;
+
+		if ($this->hasPrescription()) {
+			return [
+				'points' => $accumulatedValue,
+				'percentage' => $percentage,
+				'eligible_subtotal' => $eligibleSubtotal,
+			];
+		}
+
+		$user = $this->user;
+		$company = $user?->company;
+
+		if (!$user || !$company || !$company->is_active) {
+			return [
+				'points' => $accumulatedValue,
+				'percentage' => $percentage,
+				'eligible_subtotal' => $eligibleSubtotal,
+			];
+		}
+
+		$eligibleSubtotal = (float) $this->itemsTotal();
+		$percentage = (float) ($company->points_percentage ?? 0);
+
+		if ($percentage > 0 && $eligibleSubtotal > 0) {
+			$accumulatedValue = round($eligibleSubtotal * ($percentage / 100), 2);
+		}
+
+		return [
+			'points' => $accumulatedValue,
+			'percentage' => $percentage,
+			'eligible_subtotal' => $eligibleSubtotal,
+		];
+	}
+
 	public function totalWithCard(): float
 	{
 		return $this->itemsTotal() + $this->adjustments()->total();
