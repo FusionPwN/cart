@@ -638,7 +638,11 @@ trait CheckoutFunctions
 					}
 				}
 			}
-		} else if ($this->shipping->isHomeDelivery()) {
+		} else if ($this->shipping->isDirectDelivery() || $this->shipping->isHomeDelivery()) {
+			if ($this->shipping->isDirectDelivery() && !$this->isWithinDirectDeliverySchedule($this->shipping)) {
+				throw new Exception('Entrega direta indisponível neste horário');
+			}
+
 			$havePriceInPostalCode = PostalCodeWhitelist::where('postalcode', $this->shippingAddress['postalcode'])->get();
 
 			if (count($havePriceInPostalCode) > 0) {
@@ -799,6 +803,46 @@ trait CheckoutFunctions
 		$shippingAdjustment = $this->adjustments()->create(new SimpleShippingFee($this->shipping, $price, $threshold, $cause));
 
 		return $shippingAdjustment;
+	}
+
+	protected function isWithinDirectDeliverySchedule(ShipmentMethod $method): bool
+	{
+		$now = now();
+		$today = $now->format('d-m');
+
+		$blockedDays = collect(explode(',', (string) ($method->direct_delivery_blocked_days ?? '')))
+			->map(fn ($day) => trim($day))
+			->filter();
+
+		if ($blockedDays->contains($today)) {
+			return false;
+		}
+
+		$schedule = (string) ($method->direct_delivery_schedule ?? '');
+
+		$specialDaysScheduleRaw = $method->direct_delivery_special_days_schedule ?? null;
+		if (is_string($specialDaysScheduleRaw) && $specialDaysScheduleRaw !== '') {
+			$specialDaysSchedule = json_decode($specialDaysScheduleRaw, true);
+			if (json_last_error() === JSON_ERROR_NONE && is_array($specialDaysSchedule) && !empty($specialDaysSchedule[$today])) {
+				$schedule = (string) $specialDaysSchedule[$today];
+			}
+		} elseif (is_array($specialDaysScheduleRaw) && !empty($specialDaysScheduleRaw[$today])) {
+			$schedule = (string) $specialDaysScheduleRaw[$today];
+		}
+
+		if (!preg_match('/^([01]\d|2[0-3]):[0-5]\d-([01]\d|2[0-3]):[0-5]\d$/', $schedule)) {
+			return false;
+		}
+
+		[$startAt, $endAt] = explode('-', $schedule);
+		$start = $now->copy()->setTimeFromTimeString($startAt);
+		$end = $now->copy()->setTimeFromTimeString($endAt);
+
+		if ($end->lessThan($start)) {
+			$end->addDay();
+		}
+
+		return $now->betweenIncluded($start, $end);
 	}
 
 	public function updateClientCard()
