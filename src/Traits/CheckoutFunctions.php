@@ -451,8 +451,19 @@ trait CheckoutFunctions
 			}
 		}
 
-		#$this->updateShippingFee(); //Está repetido pois se não calcular o shipping aqui o cupão de oferta de portes não funciona
+		$this->refreshCouponAdjustments();
+		if (null !== $this->id && Cache::get('settings.checkout_packaging_of_the_order') !== null && Cache::get('settings.checkout_packaging_of_the_order') != "") {
+			$this->updateFeePackagingBag();
+		}
+		#$this->updatePaymentFee();
+		$this->updateClientCard();
 
+		if ($this instanceof Cart && !$this->state->isAbandoned()) {
+			$this->resetState();
+		}
+	}
+	protected function refreshCouponAdjustments()
+	{
 		if ($this->coupons->first()) {
 			$this->validateCoupon($this->coupons->first());
 
@@ -464,19 +475,7 @@ trait CheckoutFunctions
 				$this->updateCouponAdjustments($this->coupons->first());
 			}
 		}
-
-		#$this->updateShippingFee();
-		if (null !== $this->id && Cache::get('settings.checkout_packaging_of_the_order') !== null && Cache::get('settings.checkout_packaging_of_the_order') != "") {
-			$this->updateFeePackagingBag();
-		}
-		#$this->updatePaymentFee();
-		$this->updateClientCard();
-
-		if ($this instanceof Cart && !$this->state->isAbandoned()) {
-			$this->resetState();
-		}
 	}
-
 	public function itemsPreventFreeShipping($withItems = false)
 	{
 		$retval = $withItems ? [] : false;
@@ -801,7 +800,9 @@ trait CheckoutFunctions
 		}
 
 		$shippingAdjustment = $this->adjustments()->create(new SimpleShippingFee($this->shipping, $price, $threshold, $cause));
-
+		if ($this->coupons->first()?->type == CouponType::FREESHIPPING()) {
+			$this->refreshCouponAdjustments();
+		}
 		return $shippingAdjustment;
 	}
 

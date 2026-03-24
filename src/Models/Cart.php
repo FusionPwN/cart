@@ -388,6 +388,16 @@ class Cart extends Model implements CartContract, Adjustable
 		$item->offsetUnset('missing_units');
 		$item->offsetUnset('out_of_stock');
 		$item->offsetUnset('display_quantity');
+		$item->offsetUnset('missing_units');
+		$item->offsetUnset('out_of_stock');
+		$item->offsetUnset('display_quantity');
+		$item->offsetUnset('nr_possible_gifts');
+		$item->offsetUnset('possible_gifts');
+		$item->offsetUnset('selected_gifts');
+		$item->offsetUnset('free_quantity');
+		$item->offsetUnset('can_change_quantity');
+		$item->offsetUnset('prices');
+
 
 		$qt = $qty;
 
