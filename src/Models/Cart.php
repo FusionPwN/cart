@@ -508,6 +508,12 @@ class Cart extends Model implements CartContract, Adjustable
 					$itemArray['is_promo'] = $item->adjustments()->hasPromo();
 					$itemArray['vat'] = $item->product->VAT_rate ?? 23;
 					$itemArray['date'] = Carbon::now()->toDateTimeString();
+					// get all category ids for the product
+					if(!empty($item->product->category_data) && $item->product->category_data->count() > 0) {
+						$itemArray['categories_id'] = $item->product->category_data->pluck('category_id')->map('intval')->toArray();
+					} else {
+						$itemArray['categories_id'] = [];
+					}
 					return $itemArray;
 				})->toArray();
 				
