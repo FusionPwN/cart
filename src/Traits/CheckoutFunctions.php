@@ -784,7 +784,7 @@ trait CheckoutFunctions
 			}
 		}
 
-		if(config('coolsis.ssgnr.active'))
+		if(config('coolsis.ssgnr.active') && $this->shipping->usesWeight())
 		{
 
 			if ($this->itemsTotal() >= 0 && $this->itemsTotal() < 20) {
