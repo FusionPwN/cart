@@ -465,7 +465,13 @@ trait CheckoutFunctions
 	protected function refreshCouponAdjustments()
 	{
 		if ($this->coupons->first()) {
-			$this->validateCoupon($this->coupons->first());
+			$email = null;
+
+			if ($this instanceof Order) {
+				$email = $this->email;
+			}
+
+			$this->validateCoupon($this->coupons->first(), $email);
 
 			if ($this->couponValidator->fails()) {
 				$this->activeCoupon = null;
