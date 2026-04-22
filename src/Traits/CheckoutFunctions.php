@@ -1142,7 +1142,7 @@ trait CheckoutFunctions
 		}
 	}
 
-	public function validateCoupon(Coupon $coupon)
+	public function validateCoupon(Coupon $coupon, ?string $email)
 	{
 		$user = Auth::guard('web')->check() ? Auth::guard('web')->user() : false;
 
@@ -1152,7 +1152,7 @@ trait CheckoutFunctions
 			new IsStartDateValid($coupon, $this),
 			new IsCouponExpired($coupon, $this),
 			new HasUsesLeft($coupon, $this, $user),
-			new IsUserAllowed($coupon, $this, $user),
+			new IsUserAllowed($coupon, $this, $user, $email),
 			new OrderHasMinValue($coupon, $this),
 			new CanBeUsedWithDiscounts($coupon, $this),
 			new CanBeUsedWithProducts($coupon, $this),
