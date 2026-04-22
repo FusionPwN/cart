@@ -526,7 +526,7 @@ class CartManager implements CartManagerContract
 
 	public function validateCoupon(Coupon $coupon)
 	{
-		return $this->exists() ? $this->model()->validateCoupon($coupon) : false;
+		return $this->exists() ? $this->model()->validateCoupon($coupon, null) : false;
 	}
 
 	public function couponValidator()
