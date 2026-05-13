@@ -21,11 +21,13 @@ class ModifierCollection extends Collection
 		return $this->adjustable_model;
 	}
 
-	public function create(Adjuster $adjuster): void
+	public function create(Adjuster $adjuster): Modifier
 	{
 		$modifier = Modifier::fromAttributes($adjuster->getModelAttributes($this->adjustable_model));
 
 		$this->add($modifier);
+
+		return $modifier;
 	}
 
 	public function byType(AdjustmentType $type): Collection
