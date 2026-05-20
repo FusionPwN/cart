@@ -529,6 +529,36 @@ class CartManager implements CartManagerContract
 		return $this->exists() ? $this->model()->validateCoupon($coupon, null) : false;
 	}
 
+	public function checkoutCoupons(?string $email = null): Collection
+	{
+		if (!$this->exists()) {
+			return collect();
+		}
+
+		$cart = $this->model();
+		$user = Auth::guard('web')->user();
+		$originalCouponValidator = $cart->couponValidator ?? null;
+
+		$coupons = Coupon::query()
+			->visibleForCheckoutUser($user)
+			->orderBy('name')
+			->get()
+			->map(function (Coupon $coupon) use ($cart, $email) {
+				$validator = $cart->validateCoupon($coupon, $email);
+
+				return (object) [
+					'coupon' => $coupon,
+					'is_valid' => !$validator->fails(),
+					'reasons' => $validator->errors()->all(),
+				];
+			})
+			->values();
+
+		$cart->couponValidator = $originalCouponValidator;
+
+		return $coupons;
+	}
+
 	public function couponValidator()
 	{
 		return $this->exists() ? $this->model()->couponValidator() : null;

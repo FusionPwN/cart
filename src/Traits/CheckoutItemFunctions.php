@@ -17,6 +17,7 @@ use Vanilo\Adjustments\Models\Adjustment;
 use Vanilo\Adjustments\Models\AdjustmentTypeProxy;
 use Vanilo\Cart\Models\Cart;
 use Illuminate\Support\Str;
+use Vanilo\Adjustments\Adjusters\BundleDiscount;
 use Vanilo\Adjustments\Models\AdjustmentProxy;
 use Vanilo\Cart\Helpers\Modifier;
 use Vanilo\Cart\Models\CartItem;
@@ -266,6 +267,22 @@ trait CheckoutItemFunctions
 		if ($this->product->validDirectDiscount() && (count($this->product->discountTreeWithTypePivot) == 0 || (count($this->product->discountTreeWithTypePivot) > 0 && $this->product->discountTreeWithTypePivot->first()->can_stack_direct_discount == 1))) {
 			$this->adjustments()->create(new DirectDiscount($adjustable, $this));
 		}
+	}
+
+	public function updateBundleDiscountAdjustments(mixed $adjustable)
+	{
+		if (!$adjustable instanceof Cart && !$adjustable instanceof Order) {
+			throw new Exception(
+				sprintf(
+					'Argument must be an instance of %s or %s, %s given',
+					Cart::class,
+					Order::class,
+					$adjustable::class
+				)
+			);
+		}
+
+		$this->adjustments()->create(new BundleDiscount($adjustable, $this, $this->product->bundleItems));
 	}
 
 	/**

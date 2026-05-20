@@ -279,16 +279,16 @@ trait CheckoutFunctions
 							'value' => $discount_data->properties->levels[$max_level]
 						];
 					}
-					
+
 					$remainder = $item_count % count($discount_data->properties->levels);
 
-					for($z = 0; $z < $remainder; $z++) {
+					for ($z = 0; $z < $remainder; $z++) {
 						$max_level = $remainder - 1;
-						$level_list[$item_count-1 -$repeat_count] = [
+						$level_list[$item_count - 1 - $repeat_count] = [
 							'level' => $max_level,
 							'value' => $discount_data->properties->levels[$max_level]
 						];
-					} 
+					}
 				}
 
 				$level_list = collect($level_list)->sortBy('value')->values()->all();
@@ -380,8 +380,14 @@ trait CheckoutFunctions
 			if ($this instanceof Order && $item->overridesPrice()) {
 				#keep empty
 			} else {
-				$item->updateIntervalAdjustments($this);
-				$item->updateDirectDiscountAdjustments($this);
+				if ($item->product->isSimpleProduct()) {
+					$item->updateIntervalAdjustments($this);
+					$item->updateDirectDiscountAdjustments($this);
+				}
+
+				if ($item->product->isBundleProduct()) {
+					$item->updateBundleDiscountAdjustments($this);
+				}
 			}
 		}
 
@@ -416,7 +422,7 @@ trait CheckoutFunctions
 			}
 
 			foreach ($discount['cart_items'] as $item) {
-				if ($this instanceof Order && $item->overridesPrice()) {
+				if (($this instanceof Order && $item->overridesPrice()) || !$item->product->isSimpleProduct()) {
 				} else {
 					if ($item->product->validDirectDiscount() && !$item->product->directDiscountStacksWithDiscounts() && $discount_data['can_stack_direct_discount'] == 1) {
 						continue;
@@ -447,7 +453,9 @@ trait CheckoutFunctions
 		foreach ($this->items as $item) {
 			if ($this instanceof Order && $item->overridesPrice()) {
 			} else {
-				$item->updateStoreDiscountAdjustments($this);
+				if ($item->product->isSimpleProduct()) {
+					$item->updateStoreDiscountAdjustments($this);
+				}
 			}
 		}
 
@@ -810,8 +818,7 @@ trait CheckoutFunctions
 			}
 		}
 
-		if(config('coolsis.ssgnr.active') && $this->shipping->usesWeight())
-		{
+		if (config('coolsis.ssgnr.active') && $this->shipping->usesWeight()) {
 
 			if ($this->itemsTotal() >= 0 && $this->itemsTotal() < 20) {
 				$taxa = 2.00;
@@ -838,7 +845,7 @@ trait CheckoutFunctions
 		$today = $now->format('d-m');
 
 		$blockedDays = collect(explode(',', (string) ($method->direct_delivery_blocked_days ?? '')))
-			->map(fn ($day) => trim($day))
+			->map(fn($day) => trim($day))
 			->filter();
 
 		if ($blockedDays->contains($today)) {
@@ -904,7 +911,7 @@ trait CheckoutFunctions
 			$feePackagingBagAdjustment = $this->adjustments()->create(new FeePackagingBag(Cache::get('settings.checkout_packaging_of_the_order')));
 
 			return $feePackagingBagAdjustment;
-		} else if($this->shippingBag == 1) {
+		} else if ($this->shippingBag == 1) {
 			$feePackagingBagAdjustment = $this->adjustments()->create(new FeePackagingBag($this->shippingBagValue));
 
 			return $feePackagingBagAdjustment;
@@ -1097,9 +1104,14 @@ trait CheckoutFunctions
 	 */
 	public function applyCoupon(Coupon $coupon)
 	{
-		if (null === $this->coupons()->where('coupon_id', $coupon->id)->first()) {
-			$this->coupons()->attach($coupon);
+		$existingCoupon = $this->coupons()->where('coupon_id', $coupon->id)->first();
+
+		if (null !== $existingCoupon && $this->coupons()->count() === 1) {
+			return;
 		}
+
+		$this->removeCoupon();
+		$this->coupons()->attach($coupon);
 	}
 
 	public function updateCouponAdjustments(Coupon $coupon)
@@ -1110,7 +1122,7 @@ trait CheckoutFunctions
 
 		foreach ($this->items as $item) {
 			if (!isset($validProducts) || (isset($validProducts) && $validProducts->contains('id', $item->product_id))) {
-				if($coupon->ignore_store_discount == 1) {
+				if ($coupon->ignore_store_discount == 1) {
 					$storeAdjustment = $item->adjustments()->byType(AdjustmentTypeProxy::STORE_DISCOUNT())->first();
 
 					if (isset($storeAdjustment)) {
@@ -1168,7 +1180,7 @@ trait CheckoutFunctions
 		}
 	}
 
-	public function validateCoupon(Coupon $coupon, ?string $email)
+	public function validateCoupon(Coupon $coupon, ?string $email = null)
 	{
 		$user = Auth::guard('web')->check() ? Auth::guard('web')->user() : false;
 

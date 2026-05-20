@@ -312,7 +312,7 @@ class Cart extends Model implements CartContract, Adjustable
 	 */
 	public function addItem(Buyable $product, $qty = 1, $params = [])
 	{
-		if ($product->isSimpleProduct()) {
+		if (!$product->isCustomProduct()) {
 			$item = $this->items()->ofCart($this)->byProduct($product)->first();
 			$qt = $qty;
 
@@ -495,10 +495,10 @@ class Cart extends Model implements CartContract, Adjustable
 		if (Cache::get('settings.client_card') == 1) {
 			if ($this->getItems() !== null && count($this->getItems()) > 0) {
 				$customerCardService = new CustomerCardService();
-				$items = $this->getItems()->map(function ($item){
+				$items = $this->getItems()->map(function ($item) {
 					$itemArray = $item->toArray();
 
-					if($item->product_type == "prescription"){
+					if ($item->product_type == "prescription") {
 						$itemArray['price'] = 0;
 						$itemArray['original_price'] = 0;
 					} else {
@@ -509,15 +509,15 @@ class Cart extends Model implements CartContract, Adjustable
 					$itemArray['vat'] = $item->product->VAT_rate ?? 23;
 					$itemArray['date'] = Carbon::now()->toDateTimeString();
 					// get all category ids for the product
-					if(!empty($item->product->category_data) && $item->product->category_data->count() > 0) {
+					if (!empty($item->product->category_data) && $item->product->category_data->count() > 0) {
 						$itemArray['categories_id'] = $item->product->category_data->pluck('category_id')->map('intval')->toArray();
 					} else {
 						$itemArray['categories_id'] = [];
 					}
 					return $itemArray;
 				})->toArray();
-				
-				$cardCampaignPoints = $customerCardService->calculate('online',$items,true,$this->id);
+
+				$cardCampaignPoints = $customerCardService->calculate('online', $items, true, $this->id);
 				$balance_available_dates = $cardCampaignPoints['balance_available_dates'] ?? [];
 				$acumulatedValue = (float) $cardCampaignPoints['points'];
 			}
