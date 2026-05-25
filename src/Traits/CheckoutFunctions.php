@@ -229,67 +229,7 @@ trait CheckoutFunctions
 				$level_count = 0;
 				$level_list = [];
 
-				if ($discount_data->properties->variant == 'variant-a') {
-					for ($i = 0; $i < $item_count; $i++) {
-						$level_count = $level_count > count($discount_data->properties->levels) - 1 ? 0 : $level_count;
-						$level_list[] = [
-							'level' => $level_count,
-							'value' => $discount_data->properties->levels[$level_count] # este valor apenas serve para a ordenaçao
-						];
-
-						$level_count++;
-					}
-				} else if ($discount_data->properties->variant == 'variant-b') {
-					$max_level = $item_count > count($discount_data->properties->levels) ? count($discount_data->properties->levels) - 1 : $item_count - 1;
-
-					for ($i = 0; $i < $item_count; $i++) {
-						$level_list[] = [
-							'level' => $max_level,
-							'value' => $discount_data->properties->levels[$max_level]
-						];
-					}
-				} else if ($discount_data->properties->variant == 'variant-c') {
-					$max_level = $item_count > count($discount_data->properties->levels) ? count($discount_data->properties->levels) - 1 : $item_count - 1;
-
-					for ($i = 0; $i < $item_count - 1; $i++) {
-						$level_list[] = [
-							'level' => -1,
-							'value' => 0
-						];
-					}
-
-					$level_list[] = [
-						'level' => $max_level,
-						'value' => $discount_data->properties->levels[$max_level]
-					];
-				} else if ($discount_data->properties->variant == 'variant-d') {
-					$max_level = $item_count > count($discount_data->properties->levels) ? count($discount_data->properties->levels) - 1 : $item_count - 1;
-					$repeat_count = intdiv($item_count, count($discount_data->properties->levels));
-
-					for ($x = 0; $x < $item_count - $repeat_count; $x++) {
-						$level_list[] = [
-							'level' => -1,
-							'value' => 0
-						];
-					}
-
-					for ($i = 0; $i < $repeat_count; $i++) {
-						$level_list[] = [
-							'level' => $max_level,
-							'value' => $discount_data->properties->levels[$max_level]
-						];
-					}
-
-					$remainder = $item_count % count($discount_data->properties->levels);
-
-					for ($z = 0; $z < $remainder; $z++) {
-						$max_level = $remainder - 1;
-						$level_list[$item_count - 1 - $repeat_count] = [
-							'level' => $max_level,
-							'value' => $discount_data->properties->levels[$max_level]
-						];
-					}
-				}
+				$level_list = $this->buildScalablePercentageLevelList($discount_data, $item_count);
 
 				$level_list = collect($level_list)->sortBy('value')->values()->all();
 				$level_list_count = 0;
@@ -372,6 +312,129 @@ trait CheckoutFunctions
 				}
 			}
 		}
+	}
+
+	private function buildScalablePercentageLevelList(object $discount_data, int $item_count): array
+	{
+		$levels = $discount_data->properties->levels ?? [];
+		$variant = $discount_data->properties->variant ?? 'variant-a';
+		$level_count = 0;
+		$level_list = [];
+
+		if (empty($levels) || $item_count <= 0) {
+			return $level_list;
+		}
+
+		if ($variant == 'variant-a') {
+			for ($i = 0; $i < $item_count; $i++) {
+				$level_count = $level_count > count($levels) - 1 ? 0 : $level_count;
+				$level_list[] = [
+					'level' => $level_count,
+					'value' => $levels[$level_count]
+				];
+
+				$level_count++;
+			}
+
+			return $level_list;
+		}
+
+		if ($variant == 'variant-b') {
+			$max_level = min($item_count, count($levels)) - 1;
+
+			for ($i = 0; $i < $item_count; $i++) {
+				$level_list[] = [
+					'level' => $max_level,
+					'value' => $levels[$max_level]
+				];
+			}
+
+			return $level_list;
+		}
+
+		if ($variant == 'variant-c') {
+			$max_level = min($item_count, count($levels)) - 1;
+
+			for ($i = 0; $i < $item_count - 1; $i++) {
+				$level_list[] = [
+					'level' => -1,
+					'value' => 0
+				];
+			}
+
+			$level_list[] = [
+				'level' => $max_level,
+				'value' => $levels[$max_level]
+			];
+
+			return $level_list;
+		}
+
+		if ($variant == 'variant-d') {
+			$max_level = min($item_count, count($levels)) - 1;
+			$repeat_count = intdiv($item_count, count($levels));
+
+			for ($x = 0; $x < $item_count - $repeat_count; $x++) {
+				$level_list[] = [
+					'level' => -1,
+					'value' => 0
+				];
+			}
+
+			for ($i = 0; $i < $repeat_count; $i++) {
+				$level_list[] = [
+					'level' => $max_level,
+					'value' => $levels[$max_level]
+				];
+			}
+
+			$remainder = $item_count % count($levels);
+
+			for ($z = 0; $z < $remainder; $z++) {
+				$max_level = $remainder - 1;
+				$level_list[$item_count - 1 - $repeat_count] = [
+					'level' => $max_level,
+					'value' => $levels[$max_level]
+				];
+			}
+
+			return $level_list;
+		}
+
+		if ($variant == 'variant-e') {
+			if ($item_count === 1) {
+				return [[
+					'level' => 0,
+					'value' => $levels[0]
+				]];
+			}
+
+			$pair_quantity = $item_count % 2 === 0 ? $item_count : $item_count - 1;
+			$pair_level = min($pair_quantity, count($levels)) - 1;
+
+			if ($item_count % 2 !== 0) {
+				$level_list[] = [
+					'level' => 0,
+					'value' => $levels[0]
+				];
+			}
+
+			for ($i = count($level_list); $i < $item_count; $i++) {
+				$level_list[] = [
+					'level' => $pair_level,
+					'value' => $levels[$pair_level]
+				];
+			}
+
+			return $level_list;
+		}
+
+		return $this->buildScalablePercentageLevelList((object) [
+			'properties' => (object) [
+				'variant' => 'variant-a',
+				'levels' => $levels,
+			],
+		], $item_count);
 	}
 
 	public function updateAdjustments()
