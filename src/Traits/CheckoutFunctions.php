@@ -523,7 +523,7 @@ trait CheckoutFunctions
 		}
 
 		$this->refreshCouponAdjustments();
-		if (null !== $this->id && Cache::get('settings.checkout_packaging_of_the_order') !== null && Cache::get('settings.checkout_packaging_of_the_order') != "") {
+		if (null !== $this->id) {
 			$this->updateFeePackagingBag();
 		}
 		#$this->updatePaymentFee();
@@ -970,12 +970,24 @@ trait CheckoutFunctions
 
 	public function updateFeePackagingBag()
 	{
-		if (Cache::get('settings.checkout_packaging_of_the_order') !== null && Cache::get('settings.checkout_packaging_of_the_order') != "") {
-			$feePackagingBagAdjustment = $this->adjustments()->create(new FeePackagingBag(Cache::get('settings.checkout_packaging_of_the_order')));
+		$this->removeAdjustment(null, AdjustmentTypeProxy::FEE_PACKAGING_BAG());
 
-			return $feePackagingBagAdjustment;
-		} else if ($this->shippingBag == 1) {
-			$feePackagingBagAdjustment = $this->adjustments()->create(new FeePackagingBag($this->shippingBagValue));
+		$amount = null;
+
+		if (
+			isset($this->shipping)
+			&& (bool) ($this->shipping->has_packaging_fee ?? false)
+			&& (float) ($this->shipping->packaging_fee ?? 0) > 0
+		) {
+			$amount = (float) $this->shipping->packaging_fee;
+		} elseif (Cache::get('settings.checkout_packaging_of_the_order') !== null && Cache::get('settings.checkout_packaging_of_the_order') != "") {
+			$amount = (float) Cache::get('settings.checkout_packaging_of_the_order');
+		} elseif ($this->shippingBag == 1) {
+			$amount = (float) $this->shippingBagValue;
+		}
+
+		if ($amount !== null && $amount > 0) {
+			$feePackagingBagAdjustment = $this->adjustments()->create(new FeePackagingBag($amount));
 
 			return $feePackagingBagAdjustment;
 		}
