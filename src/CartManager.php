@@ -541,6 +541,8 @@ class CartManager implements CartManagerContract
 
 		$coupons = Coupon::query()
 			->visibleForCheckoutUser($user)
+			->visibleInCheckout()
+			->active()
 			->orderBy('name')
 			->get()
 			->map(function (Coupon $coupon) use ($cart, $email) {
