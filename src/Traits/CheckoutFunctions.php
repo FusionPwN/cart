@@ -717,7 +717,7 @@ trait CheckoutFunctions
 			}
 		} else if ($this->shipping->isDirectDelivery() || $this->shipping->isHomeDelivery()) {
 			if ($this->shipping->isDirectDelivery()) {
-				if (!$this->isWithinDirectDeliverySchedule($this->shipping)) {
+				if (!$this instanceof Order && !$this->isWithinDirectDeliverySchedule($this->shipping)) {
 					throw new Exception('Entrega direta indisponível neste horário');
 				}
 				// Para entrega direta, mantém o preço do método, não usa o preço do código postal
