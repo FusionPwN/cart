@@ -100,4 +100,9 @@ class Modifier
 	{
 		return AdjustmentTypeProxy::IsPromo($this->type);
 	}
+
+    public function getUniqueIdentifier(): string
+    {
+        return strtolower(class_basename($this->adjuster)) . '-' . $this->origin;
+    }
 }

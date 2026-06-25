@@ -221,9 +221,10 @@ class Cart extends Model implements CartContract, Adjustable
 							return ProductProxy::whereIn('id', $adjustment->getData('possible_gifts'))->hasStock()->get();
 						});
 
-						$item->nr_possible_gifts 	= $adjustment->getData('nr_possible_gifts');
-						$item->possible_gifts 		= $gifts;
-						$item->selected_gifts 		= $adjustment->getData('selected_gifts'); # $gifts->whereIn('id', $adjustment->getData('selected_gifts'));
+						$item->adjustment_identifier 	= $adjustment->getUniqueIdentifier(); # added for the gift selection to work properly, otherwise if there are multiple gifts for different adjustments they override the session variable
+						$item->nr_possible_gifts     	= $adjustment->getData('nr_possible_gifts');
+						$item->possible_gifts         	= $gifts;
+						$item->selected_gifts         	= $adjustment->getData('selected_gifts'); # $gifts->whereIn('id', $adjustment->getData('selected_gifts'));
 					}
 				}
 			}
@@ -302,8 +303,8 @@ class Cart extends Model implements CartContract, Adjustable
 		}
 
 		return (object) [
-			'errors'	=> collect($errors),
-			'quantity' 	=> $qty
+			'errors'    => collect($errors),
+			'quantity'     => $qty
 		];
 	}
 
@@ -345,8 +346,8 @@ class Cart extends Model implements CartContract, Adjustable
 			$this->setRequiresUpdateState();
 
 			return (object) [
-				'errors'	=> $result->errors,
-				'item' 		=> $item
+				'errors'    => $result->errors,
+				'item'         => $item
 			];
 		}
 	}
@@ -429,8 +430,8 @@ class Cart extends Model implements CartContract, Adjustable
 		$this->setRequiresUpdateState();
 
 		return (object) [
-			'errors'	=> $result->errors ?? collect(),
-			'item' 		=> $item
+			'errors'    => $result->errors ?? collect(),
+			'item'         => $item
 		];
 	}
 
@@ -630,10 +631,10 @@ class Cart extends Model implements CartContract, Adjustable
 	protected function getDefaultCartItemAttributes(Buyable $product, $qty)
 	{
 		return [
-			'product_type' 	=> $product->morphTypeName(),
-			'product_id' 	=> $product->getId(),
-			'quantity' 		=> $qty,
-			'price_vat' 	=> $product->getPriceVat()
+			'product_type'     => $product->morphTypeName(),
+			'product_id'     => $product->getId(),
+			'quantity'         => $qty,
+			'price_vat'     => $product->getPriceVat()
 		];
 	}
 
@@ -822,9 +823,9 @@ class Cart extends Model implements CartContract, Adjustable
 	public function isValid()
 	{
 		$this->validator = Validator::make(['items' => 1, 'stock' => 1, 'gifts' => 1], [
-			'items'	=> [new CartItemsValidForCheckout($this)],
-			'stock'	=> [new CartItemsStockValidForCheckout($this)],
-			'gifts'	=> [new CartGiftsValidForCheckout($this)]
+			'items'    => [new CartItemsValidForCheckout($this)],
+			'stock'    => [new CartItemsStockValidForCheckout($this)],
+			'gifts'    => [new CartGiftsValidForCheckout($this)]
 		], [], []);
 
 		return !$this->validator->fails();

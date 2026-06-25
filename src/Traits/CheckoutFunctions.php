@@ -471,17 +471,18 @@ trait CheckoutFunctions
 					$free_quantity = 0;
 				}
 
-				$gifts = session('checkout.selected_gifts', []);
-				$temp_gifts = [];
-				if (count($gifts) > $free_quantity) {
-					for ($i = 0; $i < $free_quantity; $i++) {
-						$temp_gifts["selection-$i"] = $gifts["selection-$i"];
-					}
+                $sessionKey = 'checkout.' . $discount['tag'] . '-' . $discount_data->id . '.selected_gifts';
+                $gifts = session($sessionKey, []);
+                $temp_gifts = [];
+                if (count($gifts) > $free_quantity) {
+                    for ($i = 0; $i < $free_quantity; $i++) {
+                        $temp_gifts["selection-$i"] = $gifts["selection-$i"];
+                    }
 
-					session()->put('checkout.selected_gifts', $temp_gifts);
-				} else if (count($gifts) < $free_quantity) {
-					$this->validationErrors[] = 'missing_gift_selection';
-				}
+                    session()->put($sessionKey, $temp_gifts);
+                } else if (count($gifts) < $free_quantity) {
+                    $this->validationErrors[] = 'missing_gift_selection';
+                }
 			}
 
 			foreach ($discount['cart_items'] as $item) {
@@ -1247,7 +1248,8 @@ trait CheckoutFunctions
 
 	public function removeCoupon()
 	{
-		session()->forget('checkout.coupon-selected_gifts');
+        $coupon = $this->coupons()->first();
+		session()->forget("checkout." . $coupon->type->value() . "-" . $coupon->id . ".coupon-selected_gifts");
 		session()->save();
 
 		if (count($this->coupons) > 0) {
