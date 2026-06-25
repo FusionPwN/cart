@@ -1249,6 +1249,11 @@ trait CheckoutFunctions
 	public function removeCoupon()
 	{
         $coupon = $this->coupons()->first();
+
+        if (!isset($coupon)) {
+            return;
+        }
+
 		session()->forget("checkout." . $coupon->type->value() . "-" . $coupon->id . ".coupon-selected_gifts");
 		session()->save();
 
