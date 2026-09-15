@@ -105,4 +105,9 @@ class Modifier
     {
         return strtolower(class_basename($this->adjuster)) . '-' . $this->origin;
     }
+
+	public function isGift(): bool
+	{
+		return $this->getData('nr_possible_gifts') > 0;
+	}
 }
