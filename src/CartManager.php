@@ -70,7 +70,7 @@ class CartManager implements CartManagerContract
 	 */
 	public function getItem(string|int $value, ?string $field = 'id'): ?CartItem
 	{
-		return $this->exists() ? $this->model()->getItem($value, $field) : false;
+		return $this->exists() ? $this->model()->getItem($value, $field) : null;
 	}
 
 	/**
