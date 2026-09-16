@@ -96,7 +96,7 @@ trait CheckoutFunctions
 	 * @param $id (product id)
 	 * 
 	 */
-	public function getItem($value, ?string $field = 'id')
+	public function getItem(string|int $value, ?string $field = 'id')
 	{
 		return $this->items->where("product.$field", $value)->first();
 	}
@@ -108,7 +108,7 @@ trait CheckoutFunctions
 	 * 
 	 * @return bool
 	 */
-	public function hasItem($value, ?string $field = 'id'): bool
+	public function hasItem(string|int $value, ?string $field = 'id'): bool
 	{
 		return (bool) count($this->items->where("product.$field", $value)) > 0;
 	}
@@ -120,7 +120,7 @@ trait CheckoutFunctions
 	 * 
 	 * @return bool
 	 */
-	public function hasItems($ids, ?string $field = 'id'): bool
+	public function hasItems(array $ids, ?string $field = 'id'): bool
 	{
 		foreach ($ids as $id) {
 			if ($this->hasItem($id, $field)) {

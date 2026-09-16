@@ -68,23 +68,23 @@ class CartManager implements CartManagerContract
 	/**
 	 * @inheritDoc
 	 */
-	public function getItem($type = 'id', $value): ?CartItem
+	public function getItem(string|int $value, ?string $field = 'id'): ?CartItem
 	{
-		return $this->exists() ? $this->model()->getItem($type, $value) : false;
+		return $this->exists() ? $this->model()->getItem($value, $field) : false;
 	}
 
 	/**
 	 * @inheritDoc
 	 */
-	public function hasItem($type = 'id', $value)
+	public function hasItem(string|int $value, ?string $field = 'id'): bool
 	{
-		return $this->exists() ? $this->model()->hasItem($type, $value) : false;
+		return $this->exists() ? $this->model()->hasItem($value, $field) : false;
 	}
 
 	/**
 	 * @inheritDoc
 	 */
-	public function hasItems($ids): bool
+	public function hasItems(array $ids): bool
 	{
 		return $this->exists() ? $this->model()->hasItems($ids) : false;
 	}
